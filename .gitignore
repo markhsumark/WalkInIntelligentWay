@@ -1,0 +1,7 @@
+# 這些部分檔案大小太大
+/.vscode/*
+/test_data/*
+/weights/*
+/yolov5/*
+/runs/*
+/datasets/*

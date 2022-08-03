@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>index</title>
+    <meta http-equiv='Content-type' content='text/html'; charset='utf-8'>
+    <meta http-equiv="pragma" Content="No-cache"> <!-- 清除cache-->
+    <link rel="stylesheet" href="index.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body style="padding-top:30px;">
+    <div class="container">
+        <div class="row tool_list">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" id="trace_switch">
+                <label class="custom-control-label" for="switch1">Show Trace</label>
+            </div>
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" id="flow_switch">
+                <label class="custom-control-label" for="switch1">Show Flow Direction</label>
+            </div>
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" id="heatmap_switch">
+                <label class="custom-control-label" for="switch1">Show Heatmap</label>
+            </div>
+        </div>
+        <div class="row videos_location">
+            <div class="col-lg-10">
+                <h3>Live Streaming</h3>
+                origin
+                <img src="{{ url_for('video_origin') }}">
+                
+                <h3>Trace</h3>
+                trace
+                <img src="{{ url_for('video_trace') }}">
+                <h3>Flow Direction</h3>
+                flow
+                <img src="{{ url_for('video_arrow') }}">
+                <h3>Heatmap</h3>
+                heatmap
+                <img src="{{ url_for('video_heatmap') }}">
+            </div>
+        </div>
+        
+        
+    </div>
+
+
+</body>
+</html>
