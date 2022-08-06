@@ -2,7 +2,7 @@ import numpy as np
 from yolov5.utils.general import (cv2)
 from numpy import sqrt, tri
 from PIL import Image
-import math
+import math ,threading, time
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -82,20 +82,20 @@ def heatmap(ppl_res, width, height, background):
     color_coverted = cv2.cvtColor(background, cv2.COLOR_BGR2RGBA)
     pil_image = Image.fromarray(color_coverted)       
     #-----------------------plt
-    plt.ion()
+   # plt.ion()
     intensity=np.array(int_list)
    
-    fig = plt.figure("heatmap", dpi=120)    
+    fig = plt.figure("heatmap", dpi=150)    
     print("fig datatype : ", type(fig), "\n")
-    
-    plt.clf() # clear 
+
+    #plt.clf() # clear 
     
     plt.pcolormesh(x_mesh,y_mesh,intensity)
     plt.axis([0, width, 0, height])  
     plt.plot(x,y,'ro')
- 
+    plt.savefig('output_heatmap.jpg')
     #fig = plt.figure()
-    print("fig  : ", type(fig), "\n")
+    #print("fig  : ", type(fig), "\n")
     #-----------------------------------------cv2 to pil---blend  
     canvas = FigureCanvas(fig)
     #fig2Img = Image.frombytes('RGBA', (width, height), canvas.tostring_rgb()) # image_string
@@ -113,6 +113,6 @@ def heatmap(ppl_res, width, height, background):
     # cv2.imshow("heatmap",img_blend)
     # cv2.waitKey()
     # cv2.destroyAllWindows
-    plt.pause(0.01)	# pause 0.01 second
-    plt.ioff()
-    return plt
+    #plt.pause(0.01)	# pause 0.01 second
+    #plt.ioff()
+    #return plt

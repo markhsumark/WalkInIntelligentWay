@@ -47,6 +47,47 @@ from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show
 import copy
 import matplotlib.pyplot as plt
 
+parser = argparse.ArgumentParser()
+def video_command():
+    parser.add_argument('--yolo-weights', nargs='+', type=str, default=WEIGHTS / 'crowdhuman_yolov5m.pt', help='model.pt path(s)')
+    parser.add_argument('--strong-sort-weights', type=str, default=WEIGHTS / 'osnet_x0_25_msmt17.pt')
+    parser.add_argument('--config-strongsort', type=str, default='strong_sort/configs/strong_sort.yaml')
+    parser.add_argument('--source', type=str, default='test_data/testing/0.mp4', help='file/dir/URL/glob, 0 for webcam')  
+    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
+    parser.add_argument('--conf-thres', type=float, default=0.5, help='confidence threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.5, help='NMS IoU threshold')
+    parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
+    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--show-box', action='store_true', help='display tracking video results')
+    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
+    parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
+    parser.add_argument('--save-vid', action='store_true', help='save video tracking results')
+    parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
+    # class 0 is person, 1 is bycicle, 2 is car... 79 is oven
+    parser.add_argument('--classes', nargs='+', type=int, default=0,help='filter by class: --classes 0, or --classes 0 2 3')
+    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
+    parser.add_argument('--augment', action='store_true', help='augmented inference')
+    parser.add_argument('--visualize', action='store_true', help='visualize features')
+    parser.add_argument('--update', action='store_true', help='update all models')
+    parser.add_argument('--project', default=ROOT / 'runs/track', help='save results to project/name')
+    parser.add_argument('--name', help='save results to project/name')
+    parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--line-thickness', default=3, type=int, help='bounding box thickness (pixels)')
+    parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
+    parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
+    parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
+    parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
+    parser.add_argument('--show-heatmap', action='store_true', default=True,help='show heatmap')
+    parser.add_argument('--show-arrow', action='store_true', default=True,help='show arrow')
+    parser.add_argument('--show-trace', action='store_true', default=True ,help='show trace')
+    parser.add_argument('--show-original', action='store_true',help='show original')
+    parser.add_argument('--wait', action='store_true', help='when showing img, waiting for user command to continue')
+    opt = parser.parse_args()
+    opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
+    return opt
+
+opt = video_command()
 total_heatmap_time = 0
 total_trace_time = 0
 total_arrow_time = 0
@@ -313,6 +354,10 @@ def run(
             global total_trace_time
             print("People count: ", len(ppl_res))
             people_nums_array.append(len(ppl_res))
+            tmp_img = im0
+            if im0.shape[0] >1000 or im0.shape[1]>1000:
+                tmp_img = cv2.resize(im0,(920,540), interpolation=cv2.INTER_AREA)
+            cv2.imwrite("output.jpg", tmp_img)
             if ppl_res:
                 if show_heatmap: 
                     background = im0
@@ -464,43 +509,51 @@ def main(opt):
     print("TOTAL ARROW TIME:", total_arrow_time)
     print("TOTAL TRACE TIME", total_trace_time)
     print("TOTAL TIME:" + format(time_end-time_start))
-    yolo_path = 'yolo_result.csv'
-    yolo_headers = ['yolo_time', 'people']
-    strongsort_path = 'strongsort_result.csv'
-    strongsort_headers = ['strongsort_time', 'people']
-    heatmap_path = 'heatmap_result.csv'
-    heatmap_headers = ['heatmap_time', 'people']
-    arrow_path = 'arrow_result.csv'
-    arrow_headers = ['arrow_time', 'people']
-    flow_path = 'flow_result.csv'
-    flow_headers = ['flow_time', 'people']
-    with open(yolo_path, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        #writer.writerow(yolo_headers)
-        for i in range(len(yolo_array)):
-            writer.writerow([yolo_array[i], people_nums_array[i]])
-    with open(strongsort_path, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        #writer.writerow(strongsort_headers)
-        for i in range(len(strongsort_array)):
-            writer.writerow([strongsort_array[i], people_nums_array[i]])
-    with open(heatmap_path, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        #writer.writerow(heatmap_headers)
-        for i in range(len(heatmap_array)):
-            writer.writerow([heatmap_array[i], people_nums_array[i]])
-    with open(arrow_path, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        #writer.writerow(arrow_headers)
-        for i in range(len(arrow_array)):
-            writer.writerow([arrow_array[i], people_nums_array[i]])
-    with open(flow_path, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        #writer.writerow(flow_headers)
-        for i in range(len(trace_array)):
-            writer.writerow([trace_array[i], people_nums_array[i]])
-    
+    # yolo_path = 'yolo_result.csv'
+    # yolo_headers = ['yolo_time', 'people']
+    # strongsort_path = 'strongsort_result.csv'
+    # strongsort_headers = ['strongsort_time', 'people']
+    # heatmap_path = 'heatmap_result.csv'
+    # heatmap_headers = ['heatmap_time', 'people']
+    # arrow_path = 'arrow_result.csv'
+    # arrow_headers = ['arrow_time', 'people']
+    # flow_path = 'flow_result.csv'
+    # flow_headers = ['flow_time', 'people']
+    # with open(yolo_path, 'a', newline='') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     #writer.writerow(yolo_headers)
+    #     for i in range(len(yolo_array)):
+    #         writer.writerow([yolo_array[i], people_nums_array[i]])
+    # with open(strongsort_path, 'a', newline='') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     #writer.writerow(strongsort_headers)
+    #     for i in range(len(strongsort_array)):
+    #         writer.writerow([strongsort_array[i], people_nums_array[i]])
+    # with open(heatmap_path, 'a', newline='') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     #writer.writerow(heatmap_headers)
+    #     for i in range(len(heatmap_array)):
+    #         writer.writerow([heatmap_array[i], people_nums_array[i]])
+    # with open(arrow_path, 'a', newline='') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     #writer.writerow(arrow_headers)
+    #     for i in range(len(arrow_array)):
+    #         writer.writerow([arrow_array[i], people_nums_array[i]])
+    # with open(flow_path, 'a', newline='') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     #writer.writerow(flow_headers)
+    #     for i in range(len(trace_array)):
+    #         writer.writerow([trace_array[i], people_nums_array[i]])
+#opt = argparse.ArgumentParser().parse_args()
 
-if __name__ == "__main__":
-    opt = parse_opt()
+
+def start_stream(source):
+    print("After pass: ", source)
+    parser.set_defaults(source = source)
+    opt = parser.parse_args()
     main(opt)
+    
+if __name__ == "__main__":
+    opt = video_command()
+    main(opt)
+    #video_command()

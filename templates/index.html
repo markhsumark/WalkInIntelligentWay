@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>走出智在的路</title>
+    <meta http-equiv='Content-type' content='text/html'; charset='utf-8'>
+    <meta http-equiv="pragma" Content="No-cache"> <!-- 清除cache-->
+    <link rel="stylesheet" href="{{url_for('static', filename='css/index.css')}}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="../static/css/index.css">"
+    
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/index.js')}}"></script>
+    <script scr="../static/js/index.js"></script>
+</head>
+<body>
+    <div class="jumbotron jumbotron-fluid" style="background-image: url({{url_for('static', filename='img/headerbackground.jpg')}}); background-repeat: no-repeat; background-size: cover;">
+        <div class="container header-text" >
+            <h1>走出智在的路</h1> 
+            <p>Walk in Intellent Way</p> 
+        </div>
+    </div>
+    <div style="padding-left: 100px;padding-right: 100px;">
+        <div class="row ">
+            <div class='tool_list'>
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="sw_trace">
+                    <label class="custom-control-label" for="sw_trace">Show Trace</label>
+                </div>
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="sw_flow">
+                    <label class="custom-control-label" for="sw_flow">Show Flow Direction</label>
+                </div>
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="sw_heatmap">
+                    <label class="custom-control-label" for="sw_heatmap">Show Heatmap</label>
+                </div>
+            </div>
+        </div>
+        <div class="row videos_location">
+            <div class="col-md-9">
+                <h3>Live Streaming</h3>
+                <img src="{{ url_for('video_origin') }}">
+            </div>
+            <div class="col-md-3">
+                <h5>Number of people detected：</h5>
+                <span class="n_of_peopele">('n_of_people')</span>
+            </div>
+            
+        </div>
+        <div class="row videos_location">
+            <div class="col-md-9">
+                <h3>Trace</h3>
+                <img src="{{ url_for('video_trace') }}" class="focus_img" id = 'vid_trace' style="display: none">
+            </div>
+        </div>
+        <div class="row videos_location">
+            <div class="col-md-9">
+                <h3>Flow Direction</h3>
+                <img src="{{ url_for('video_flow') }}"class="focus_img" id = 'vid_flow' style="display: none">
+            </div>
+        </div>
+        <div class="row videos_location">
+               
+            <div class="col-md-9">
+                 <h3>Heatmap</h3>
+                <img src="{{ url_for('video_heatmap') }}"class="focus_img" id = 'vid_heatmap' style="display: none">
+            </div>
+        </div>
+            
+    </div>
+        
+
+
+</body>
+</html>

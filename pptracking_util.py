@@ -51,8 +51,10 @@ COLOR_LONG = (255, 0, 0)
 def show(title, im, wait = 0):
     if im.shape[0] >1000 or im.shape[1]>1000:
         im = cv2.resize(im,(920,540), interpolation=cv2.INTER_AREA)
-    cv2.imshow(title, im)
-    cv2.waitKey(100)
+    print("ss")    
+    cv2.imwrite("output_"+title+".jpg", im)
+    #cv2.imshow(title, im)
+    #cv2.waitKey(100)
 def color_palette(pp_id:int): 
         x = pp_id % 10
         #rgb -> bgr
