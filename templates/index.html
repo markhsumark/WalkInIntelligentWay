@@ -22,7 +22,7 @@
             <p>Walk in Intellent Way</p> 
         </div>
     </div>
-    <div style="padding-left: 100px;padding-right: 100px;">
+    <div style="padding-left: 100px;padding-right: 100px; padding-bottom: 100px;">
         <div class="row ">
             <div class='tool_list'>
                 <div class="custom-control custom-switch">
@@ -42,7 +42,7 @@
         <div class="row videos_location">
             <div class="col-md-9">
                 <h3>Live Streaming</h3>
-                <img src="{{ url_for('video_origin') }}">
+                <img src="{{ url_for('video_origin') }}" style="width: 100%;">
             </div>
             <div class="col-md-3">
                 <h5>Number of people detected：</h5>
@@ -51,22 +51,29 @@
             
         </div>
         <div class="row videos_location">
-            <div class="col-md-9">
+            <div class="col-lg-4">
                 <h3>Trace</h3>
-                <img src="{{ url_for('video_trace') }}" class="focus_img" id = 'vid_trace' style="display: none">
+                <br>
+                <div class="box">
+                    <img src="{{ url_for('video_trace') }}"class="focus_img" id = 'vid_trace' style="display: none">
+                </div>
+                
             </div>
-        </div>
-        <div class="row videos_location">
-            <div class="col-md-9">
-                <h3>Flow Direction</h3>
-                <img src="{{ url_for('video_flow') }}"class="focus_img" id = 'vid_flow' style="display: none">
+            <div class="col-lg-4">
+                <h3>Flow</h3>
+                <br>
+                <div class="box">
+                    <img src="{{ url_for('video_flow') }}"class="focus_img" id = 'vid_flow' style="display: none">
+                </div>
+                
             </div>
-        </div>
-        <div class="row videos_location">
-               
-            <div class="col-md-9">
-                 <h3>Heatmap</h3>
-                <img src="{{ url_for('video_heatmap') }}"class="focus_img" id = 'vid_heatmap' style="display: none">
+            <div class="col-lg-4">
+                <h3>Heatmap</h3>
+                <br>
+                <div class="box">
+                    <img src="{{ url_for('video_heatmap') }}"class="focus_img" id = 'vid_heatmap' style="display: none">
+                </div>
+                
             </div>
         </div>
             

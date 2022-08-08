@@ -34,14 +34,9 @@ $(document).ready(function(){
             $('#vid_heatmap').hide()
         }
     })
-    fetch('/start_process')
-        // .then((response) => {
-        //     return response.json();
-        // })
-        .then( (response) => {
-            console.log(response);
-        })
-        .catch((error) => {
-            console.log(`Error: ${error}`);
+    $('.box').hover(function(){
+        $(this).css("z-index", 9)
+    },function(){
+        $(this).css("z-index", 1)
     })
 })

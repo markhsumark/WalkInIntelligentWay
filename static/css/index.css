@@ -21,5 +21,14 @@
     font-size: 22px;
     color: blue;
 }
-.focus_img{transform:scale(1,1);transition: all 0.3s ease-out;}
-.focus_img:hover{transform:scale(1.5,1.5);}
+.box{
+    width: 100%;
+}
+.focus_img{
+    position: relative;
+    width: 100%;
+    transform:scale(1,1);transition: all 0.3s ease-out;
+}
+.focus_img:hover{
+    transform:scale(1.5,1.5);
+}
