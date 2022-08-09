@@ -1,4 +1,5 @@
-from flask import Flask, render_template, Response, url_for, redirect, request, make_response
+from crypt import methods
+from flask import Flask, render_template, Response, url_for, redirect, request, make_response, stream_with_context
 from PIL import Image, ImageOps
 import cv2
 import sys
@@ -29,29 +30,36 @@ def legal_url(url):
     
 def gen_frames_origin():
     while True:
-        time.sleep(0.01)
+        time.sleep(0.05)
         frame_origin = open("output.jpg",'rb').read()
         #frame_heatmap = open("output.jpg",'rb').read()
         yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + frame_origin + b'\r\n')
 def gen_frames_trace():
     while True:
-        time.sleep(0.01)
+        time.sleep(0.05)
         frame_origin = open("output_Trace.jpg",'rb').read()
         #frame_heatmap = open("output.jpg",'rb').read()
         yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + frame_origin + b'\r\n')
 def gen_frames_flow():
     while True:
-        time.sleep(0.01)
+        time.sleep(0.05)
         frame_origin = open("output_Arrow.jpg",'rb').read()
         #frame_heatmap = open("output.jpg",'rb').read()
         yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + frame_origin + b'\r\n')
 def gen_frames_heatmap():
     while True:
-        time.sleep(0.01)
+        time.sleep(0.05)
         frame_origin = open("output_heatmap.jpg",'rb').read()
+        #frame_heatmap = open("output.jpg",'rb').read()
+        yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame_origin + b'\r\n')
+def gen_frames_box():
+    while True:
+        time.sleep(0.01)
+        frame_origin = open("output_Box.jpg",'rb').read()
         #frame_heatmap = open("output.jpg",'rb').read()
         yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + frame_origin + b'\r\n')
@@ -67,6 +75,13 @@ def gen_frames_heatmap():
 #             yield (b'--frame\r\n'
 #                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+def gen_number():
+    while True:
+        time.sleep(0.01)
+        print("-&&&&&---", num)
+        num = globals.n_of_people
+        yield (b'--text\r\n'
+                b'Content-Type: multipart/form-data\r\n\r\n' + str(num) + b'\r\n')
 
 @app.route('/video_origin')
 def video_origin():
@@ -85,6 +100,16 @@ def video_flow():
 def video_heatmap():
     return Response(gen_frames_heatmap(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/video_box')
+def video_box():
+    return Response(gen_frames_box(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# @app.route('/number')
+# def number():
+#     return Response(gen_number(),
+#                     mimetype='multipart/x-mixed-replace; boundary=text')
 
 @app.route('/')
 def start():
@@ -110,10 +135,15 @@ def end_process():
     
     
 @app.route('/start', methods=['POST'])
-def return_home():
+def return_home() :
     globals.kill_t = True
     print("return_home")
     return redirect(url_for('start'))
+
+
+    
+
+    
     
 
 @app.route('/start_process', methods=['POST'])
@@ -177,7 +207,7 @@ def start_process_fun():
     else:
         # return error to the user and display on the screen
         # TODO: page error (by mark)
-        return render_template('error.html', source = source)
+        return render_template('source_error.html', source = source)
 
 # @app.route('/StartInfo/<string:StartInfo>', methods=['GET','POST'])
 # def ProcessStartinfo(StartInfo):

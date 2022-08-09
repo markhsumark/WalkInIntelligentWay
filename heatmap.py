@@ -88,7 +88,7 @@ def heatmap(ppl_res, width, height):
     fig = plt.figure("heatmap", dpi=150)    
     print("fig datatype : ", type(fig), "\n")
 
-    #plt.clf() # clear 
+    plt.clf() # clear 
     
     plt.pcolormesh(x_mesh,y_mesh,intensity)
     plt.axis([0, width, 0, height])  

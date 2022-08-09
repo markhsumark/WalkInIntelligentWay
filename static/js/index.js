@@ -34,6 +34,17 @@ $(document).ready(function(){
             $('#vid_heatmap').hide()
         }
     })
+    $('#sw_box').on('change', function() {
+        switchStatus = $(this).is(':checked');
+        console.log('Show box:'+switchStatus)
+        if ($(this).is(':checked')) {
+            // do display heatmap
+            $('#vid_box').show()
+        }
+        else {
+            $('#vid_box').hide()
+        }
+    })
     $('.box').hover(function(){
         $(this).css("z-index", 9)
     },function(){

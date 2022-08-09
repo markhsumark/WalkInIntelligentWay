@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{url_for('static', filename='css/index.css')}}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" href="../static/css/index.css">"
+    <link rel="stylesheet" href="../static/css/index.css">
     
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
@@ -37,6 +37,10 @@
                     <input type="checkbox" class="custom-control-input" id="sw_heatmap">
                     <label class="custom-control-label" for="sw_heatmap">Show Heatmap</label>
                 </div>
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="sw_box">
+                    <label class="custom-control-label" for="sw_box">Show Box</label>
+                </div>
                 <form method='POST' action= "{{url_for('end_process')}}">
                     <input type='submit'class="btn btn-primary" value ='terminate'>
                 </form>
@@ -51,14 +55,9 @@
                 <h3>Live Streaming</h3>
                 <img src="{{ url_for('video_origin') }}" style="width: 100%;">
             </div>
-            <div class="col-md-3">
-                <h5>Number of people detected：</h5>
-                <span class="n_of_peopele">('n_of_people')</span>
-            </div>
-            
         </div>
         <div class="row videos_location">
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <h3>Trace</h3>
                 <br>
                 <div class="box">
@@ -66,7 +65,7 @@
                 </div>
                 
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <h3>Flow</h3>
                 <br>
                 <div class="box">
@@ -74,11 +73,19 @@
                 </div>
                 
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <h3>Heatmap</h3>
                 <br>
                 <div class="box">
                     <img src="{{ url_for('video_heatmap') }}"class="focus_img" id = 'vid_heatmap' style="display: none">
+                </div>
+                
+            </div>
+            <div class="col-lg-3">
+                <h3>Counting</h3>
+                <br>
+                <div class="box">
+                    <img src="{{ url_for('video_box') }}"class="focus_img" id = 'vid_box' style="display: none">
                 </div>
                 
             </div>
@@ -87,6 +94,14 @@
     </div>
         
 
-
+    <script>
+        if (!!window.EventSource) {
+            var source = new EventSource('/');
+            console.log(source)
+            source.onmessage = function(e) {
+                $("#number").text(e.data);
+            }
+        }
+    </script>
 </body>
 </html>

@@ -59,7 +59,7 @@ def video_command():
     parser.add_argument('--iou-thres', type=float, default=0.5, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--show-box', action='store_true',help='display tracking video results')
+    parser.add_argument('--show-box', action='store_true', default = True, help='display tracking video results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
@@ -92,6 +92,7 @@ opt = video_command()
 total_heatmap_time = 0
 total_trace_time = 0
 total_arrow_time = 0
+n_of_people = 0
 people_nums_array = []
 heatmap_array = []
 trace_array = []
@@ -259,6 +260,10 @@ def run(
                     txt_file_name = p.parent.name  # get folder name containing current img
                     save_path = str(save_dir / p.parent.name)  # im.jpg, vid.mp4, ...
             curr_frames[i] = im0
+            tmp_img = copy.deepcopy(im0)
+            if im0.shape[0] >1000 or im0.shape[1]>1000:
+                tmp_img = cv2.resize(im0,(920,540), interpolation=cv2.INTER_AREA)
+            cv2.imwrite("output.jpg", tmp_img)
             ##############################test stream#######################################
             #cv2.imshow(str(p),im0)
             #break
@@ -266,7 +271,7 @@ def run(
             txt_path = str(save_dir / 'tracks' / txt_file_name)  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
             imc = im0.copy() if save_crop else im0  # for save_crop
-
+            background = copy.deepcopy(im0)
             annotator = Annotator(im0, line_width=2, pil=not ascii)
             if cfg.STRONGSORT.ECC:  # camera motion
                 strongsort_list[i].tracker.camera_update(prev_frames[i], curr_frames[i])
@@ -355,15 +360,12 @@ def run(
             global total_heatmap_time
             global total_arrow_time
             global total_trace_time
+            globals.n_of_people = len(ppl_res)
             print("People count: ", len(ppl_res))
             people_nums_array.append(len(ppl_res))
-            tmp_img = im0
-            if im0.shape[0] >1000 or im0.shape[1]>1000:
-                tmp_img = cv2.resize(im0,(920,540), interpolation=cv2.INTER_AREA)
-            cv2.imwrite("output.jpg", tmp_img)
+            
             if ppl_res:
                 if show_heatmap: 
-                    background = im0
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
                     heatmap(ppl_res, w, h)
@@ -375,8 +377,7 @@ def run(
                     #t_heatmap = threading.Thread(target = heatmap(ppl_res, w, h, background))
                     #t_heatmap.start()
                 # show arrow diagram(opencv)
-                if show_arrow or show_trace: 
-                    background = im0      
+                if show_arrow or show_trace:   
                     data_site.add_record(ppl_res)
                     if show_arrow:
                         if data_site.count_frame >= data_site.frame_max:
@@ -422,9 +423,10 @@ def run(
             # Stream results
             im0 = annotator.result()
             if show_box:
-                im0 = cv2.resize(im0, (1000,700), interpolation=cv2.INTER_AREA)
-                cv2.imshow(str(p), im0)
-                cv2.waitKey(10)  # 1 millisecond
+                box_im = copy.deepcopy(im0)
+                box_im = cv2.resize(box_im, (1000,700), interpolation=cv2.INTER_AREA)
+                box_im= cv2.putText(box_im, "number of people:"+str(len(ppl_res)), (10, 100), cv2.FONT_HERSHEY_DUPLEX,1, (255, 0, 0), 2, cv2.LINE_AA)
+                show("Box", box_im)
 
             # Save results (image with detections)
             if save_vid:
@@ -555,6 +557,7 @@ def start_stream(source):
     parser.set_defaults(source = source)
     opt = parser.parse_args()
     main(opt)
+    
     
 if __name__ == "__main__":
     opt = video_command()
