@@ -20,7 +20,7 @@ def fig2img(fig):
     img = Image.open(buf)
     return img
   
-def heatmap(ppl_res, width, height, background):
+def heatmap(ppl_res, width, height):
     # goal: put the orig frame under the heatmap
     # DEFINE GRID SIZE AND RADIUS(h)
     grid_size = (width + height) // 200
