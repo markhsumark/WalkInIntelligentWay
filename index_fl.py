@@ -90,7 +90,7 @@ def index():
     t.start()
     time.sleep(1)
     return render_template('index.html')
-@app.route('/index', methods=['POST'])
+@app.route('/end_process', methods=['POST'])
 def end_process():
     terminate_t = False
     print("end_process")
