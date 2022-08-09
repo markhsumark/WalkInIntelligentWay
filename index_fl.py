@@ -90,7 +90,21 @@ def index():
     t.start()
     time.sleep(1)
     return render_template('index.html')
-
+@app.route('/index', methods=['POST'])
+def end_process():
+    terminate_t = False
+    print("end_process")
+    globals.kill_t = True
+    return render_template('index.html')
+    
+    
+@app.route('/', methods=['POST'])
+def return_home():
+    terminate_t = False
+    globals.kill_t = True
+    print("return_home")
+    return render_template('start.html')
+    
 @app.route('/start_process', methods=['POST'])
 def start_process_fun():
     global source 

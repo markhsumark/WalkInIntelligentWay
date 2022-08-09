@@ -2,7 +2,7 @@ var count = 0
 $(document).ready(function(){
     $('#sw_trace').on('change', function() {
         switchStatus = $(this).is(':checked');
-        console.log('Shwo Trace:'+switchStatus)
+        console.log('Show Trace:'+switchStatus)
         if ($(this).is(':checked')) {
             // do display trace
             $('#vid_trace').show()
@@ -14,7 +14,7 @@ $(document).ready(function(){
     })
     $('#sw_flow').on('change', function() {
         switchStatus = $(this).is(':checked');
-        console.log('Shwo Flow:'+switchStatus)
+        console.log('Show Flow:'+switchStatus)
         if ($(this).is(':checked')) {
             // do display flow
             $('#vid_flow').show()
@@ -25,7 +25,7 @@ $(document).ready(function(){
     })
     $('#sw_heatmap').on('change', function() {
         switchStatus = $(this).is(':checked');
-        console.log('Shwo Heatmap:'+switchStatus)
+        console.log('Show Heatmap:'+switchStatus)
         if ($(this).is(':checked')) {
             // do display heatmap
             $('#vid_heatmap').show()
@@ -39,4 +39,8 @@ $(document).ready(function(){
     },function(){
         $(this).css("z-index", 1)
     })
+
 })
+function terminate(){
+    return false
+}

@@ -37,6 +37,13 @@
                     <input type="checkbox" class="custom-control-input" id="sw_heatmap">
                     <label class="custom-control-label" for="sw_heatmap">Show Heatmap</label>
                 </div>
+                <form method='POST' action= "{{ url_for('end_process')}}" onsubmit="return terminate()">
+                    <input type='submit'class="btn btn-primary" text ='terminate'>
+                </form>
+                <form method='POST' action= "{{ url_for('return_home')}}">
+                    <input type='submit'class="btn btn-primary" text ='terminate'>
+                </form>
+                
             </div>
         </div>
         <div class="row videos_location">
