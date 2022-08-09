@@ -37,7 +37,7 @@
                     <input type="checkbox" class="custom-control-input" id="sw_heatmap">
                     <label class="custom-control-label" for="sw_heatmap">Show Heatmap</label>
                 </div>
-                <form method='POST' action= "{{url_for('end_process')}}" onsubmit="return terminate()">
+                <form method='POST' action= "{{url_for('end_process')}}">
                     <input type='submit'class="btn btn-primary" value ='terminate'>
                 </form>
                 <form method='POST' action= "{{url_for('return_home')}}">

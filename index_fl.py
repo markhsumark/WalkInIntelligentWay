@@ -1,6 +1,7 @@
 from flask import Flask, render_template, Response, url_for, redirect, request, make_response
 from PIL import Image, ImageOps
 import cv2
+import sys
 import track
 import threading
 import time
@@ -8,7 +9,15 @@ import os
 import json
 import urllib.request
 import subprocess as sp
+import ctypes
+import inspect
+import globals
+
 app = Flask(__name__)
+source = ""
+t = threading.Thread(target = track.start_stream, args = (source,))
+#t = multiprocessing.Process(target = track.start_stream, args = (source,))
+terminate_t = True
 #camera = cv2.VideoCapture(0)
 
 def legal_url(url):
@@ -80,31 +89,33 @@ def video_heatmap():
 @app.route('/')
 def start():
     return render_template('start.html')
-source = ""
+
+
 @app.route('/index')
 def index():
     global source
     # if start, get source path
     print("before pass: ", source)
     t = threading.Thread(target = track.start_stream, args = (source,))
+    globals.kill_t = False
     t.start()
     time.sleep(1)
     return render_template('index.html')
-@app.route('/end_process', methods=['POST'])
+
+@app.route('/index', methods=['POST'])
 def end_process():
-    terminate_t = False
     print("end_process")
     globals.kill_t = True
     return render_template('index.html')
     
     
-@app.route('/', methods=['POST'])
+@app.route('/start', methods=['POST'])
 def return_home():
-    terminate_t = False
     globals.kill_t = True
     print("return_home")
-    return render_template('start.html')
+    return redirect(url_for('start'))
     
+
 @app.route('/start_process', methods=['POST'])
 def start_process_fun():
     global source 
@@ -186,3 +197,4 @@ def start_process_fun():
 
 if __name__ == '__main__':
     app.run('0.0.0.0')
+    # app.run('140.121.199.195')

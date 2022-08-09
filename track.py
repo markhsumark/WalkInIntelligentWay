@@ -1,6 +1,7 @@
 
 import argparse
-
+from glob import glob
+import globals
 import os
 # limit the number of cpus used by high performance libraries
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -58,7 +59,7 @@ def video_command():
     parser.add_argument('--iou-thres', type=float, default=0.5, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--show-box', action='store_true', help='display tracking video results')
+    parser.add_argument('--show-box', action='store_true',help='display tracking video results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
@@ -211,6 +212,8 @@ def run(
     
     frame_count_cc = 0
     for frame_idx, (path, im, im0s, vid_cap, s) in enumerate(dataset):
+        if globals.kill_t == True:
+            break
         frame_count_cc += 1
         # if frame_count_cc >= 300:
         #     break

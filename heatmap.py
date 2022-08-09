@@ -11,14 +11,14 @@ from matplotlib.offsetbox import (TextArea, DrawingArea, OffsetImage,
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 #from matplotlib.cbook import get_sample_data
 #from matplotlib.backends.backend_gtk4agg import FigureCanvasQTAgg as FigureCanvas
-def fig2img(fig):
-    """Convert a Matplotlib figure to a PIL Image and return it"""
-    import io
-    buf = io.BytesIO()
-    fig.savefig(buf)
-    buf.seek(0)
-    img = Image.open(buf)
-    return img
+# def fig2img(fig):
+#     """Convert a Matplotlib figure to a PIL Image and return it"""
+#     import io
+#     buf = io.BytesIO()
+#     fig.savefig(buf)
+#     buf.seek(0)
+#     img = Image.open(buf)
+#     return img
   
 def heatmap(ppl_res, width, height):
     # goal: put the orig frame under the heatmap
@@ -43,14 +43,14 @@ def heatmap(ppl_res, width, height):
     y_c = y_mesh+(grid_size/2)
     # print("x_c datatype", type(x_c))
     #--------------------------
-    imagebox = OffsetImage(background, zoom=0.2)
-    imagebox.image.axes = ax
-    ab = AnnotationBbox(imagebox, [0.15,0.5],
-                    xybox=(170., -50.),
-                    xycoords='data',
-                    boxcoords="offset points",
-                    pad=0.5
-                    )
+    # imagebox = OffsetImage(background, zoom=0.2)
+    # imagebox.image.axes = ax
+    # ab = AnnotationBbox(imagebox, [0.15,0.5],
+    #                 xybox=(170., -50.),
+    #                 xycoords='data',
+    #                 boxcoords="offset points",
+    #                 pad=0.5
+    #                 )
     #ax.add_artist(ab)
     #--------------------------
 
@@ -79,8 +79,8 @@ def heatmap(ppl_res, width, height):
             int_row.append(p_total)
         int_list.append(int_row)
     # ---------------------cv2 to pil
-    color_coverted = cv2.cvtColor(background, cv2.COLOR_BGR2RGBA)
-    pil_image = Image.fromarray(color_coverted)       
+    # color_coverted = cv2.cvtColor(background, cv2.COLOR_BGR2RGBA)
+    # pil_image = Image.fromarray(color_coverted)       
     #-----------------------plt
    # plt.ion()
     intensity=np.array(int_list)
@@ -97,7 +97,7 @@ def heatmap(ppl_res, width, height):
     #fig = plt.figure()
     #print("fig  : ", type(fig), "\n")
     #-----------------------------------------cv2 to pil---blend  
-    canvas = FigureCanvas(fig)
+    # canvas = FigureCanvas(fig)
     #fig2Img = Image.frombytes('RGBA', (width, height), canvas.tostring_rgb()) # image_string
     #blendImg = Image.blend(fig2Img, pil_image, alpha = 0.5)
     #blendImg.show()
