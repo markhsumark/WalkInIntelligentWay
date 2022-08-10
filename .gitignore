@@ -5,3 +5,8 @@
 /yolov5/*
 /runs/*
 /datasets/*
+/output.mp4
+/output_Arrow.mp4
+/output_Trace.mp4
+/ourput_Box.mp4
+/output_heatmap.mp4

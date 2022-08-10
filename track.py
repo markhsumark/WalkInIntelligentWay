@@ -214,6 +214,7 @@ def run(
     frame_count_cc = 0
     for frame_idx, (path, im, im0s, vid_cap, s) in enumerate(dataset):
         if globals.kill_t == True:
+            print("STOP ANALYZING!!")
             break
         frame_count_cc += 1
         # if frame_count_cc >= 300:
@@ -560,6 +561,6 @@ def start_stream(source):
     
     
 if __name__ == "__main__":
-    opt = video_command()
+    # opt = video_command()
     main(opt)
     #video_command()

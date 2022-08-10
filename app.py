@@ -119,10 +119,8 @@ def start():
 @app.route('/index')
 def index():
     global source
-    # if start, get source path
-    print("before pass: ", source)
-    t = threading.Thread(target = track.start_stream, args = (source,))
     globals.kill_t = False
+    t = threading.Thread(target = track.start_stream, args = (source,))
     t.start()
     time.sleep(1)
     return render_template('index.html')
