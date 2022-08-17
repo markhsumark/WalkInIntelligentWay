@@ -199,7 +199,7 @@ def run(
         )
     outputs = [None] * nr_sources
     # ---------------------------------------------------------------------------------
-    n_frame = 5 # 決定一次要分析幾個frame , n_frame must>= 2
+    n_frame = 3 # 決定一次要分析幾個frame , n_frame must>= 2
     data_site = DataSites(n_frame)
     first_img = []
     cnt = 0
@@ -382,7 +382,7 @@ def run(
                     data_site.add_record(ppl_res)
                     if show_arrow:
                         if data_site.count_frame >= data_site.frame_max:
-                            edge = int((background.shape[1] + background.shape[0]/2.0)/5.0)
+                            edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
                             
                             arrow_prev_time = time.time()
                             arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)

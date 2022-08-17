@@ -1,7 +1,7 @@
 from ast import Lambda
 from faulthandler import disable
 from crowd import Crowd
-from pptracking_util import dist, ThinknessSigmoid, color_palette, DrawerManager, angle
+from pptracking_util import dist, ThinknessSigmoid, color_palette, DrawerManager, angle, b_search_pp
 from scipy.spatial.distance import cdist
 from collections import deque
 from functools import cmp_to_key
@@ -64,7 +64,7 @@ class DataSites: #Data_position
         start = time.time()
         arrow_record = self.records
         pdata_per_frame = []
-        # for fid in range(len(arrow_record)-1):
+        # for i in range(len(arrow_record)-1):
         frame_start = arrow_record[0]
         frame_end = arrow_record[-1]
         person_data = []
@@ -122,30 +122,45 @@ class DataSites: #Data_position
         # 取得每個frame中每個人的data
         pdata_per_frame = self.trans_data2ppdata(distance_edge)
         
-        # 每一個動態資料 處理一次 
+        # 取頭尾
         for pdatas in pdata_per_frame:
-            
             # TODO remove the people that don't move
             
             # 這段用來找出 附近且走差不多方向 的人
             start = time.time()
             for pp1 in pdatas:
                 # 周圍超過2人 
-                if len(pp1.nearby) >= 2 and abs(pp1.vector[0]) + abs(pp1/vector[1]) >= 10:
+                if len(pp1.nearby) <= 1 or int(abs(pp1.vector[0]) + abs(pp1.vector[1])) <= 1:
+                    pp1.nearby = []
+                else:
                     new_nearby = [pp1]
                     for near_pp in pp1.nearby:
 			            # 找對應的pid，然後跟據條件合並向量
-                        for pp2 in pdatas:
-                            if pp2.id == near_pp.id:
-                                vector2 =  pp2.vector
-                                vector = pp1.vector
+                        i_of_pp2 = b_search_pp(pdatas, 0, len(pdatas)-1, near_pp.id)
+                        if i_of_pp2 == -1:
+                            print("not found")
+                        else:
+                            pp2 = pdatas[i_of_pp2]
+                            vector2 =  pp2.vector
+                            vector = pp1.vector
+                            
+                            # if pp2 isn't move or move slow. (ignore unnessesary people data)
+                            if abs(vector2[0]) + abs(vector2[1]) <= 2:
+                                break
+                            elif angle(vector, vector2) <= theta:
+                                new_nearby.append(pp2)  
+                        # for pp2 in pdatas:
+                        #     if pp2.id == near_pp.id:
+                        #         print("found")
+                        #         vector2 =  pp2.vector
+                        #         vector = pp1.vector
                                 
-                                # if pp2 isn't move or move slow. (ignore unnessesary people data)
-                                if abs(vector2[0]) + abs(vector2[1]) <= 10:
-                                    break
-                                elif angle(vector, vector2) <= theta:
-                                    new_nearby.append(pp2)
-                                break  
+                        #         # if pp2 isn't move or move slow. (ignore unnessesary people data)
+                        #         if abs(vector2[0]) + abs(vector2[1]) <= 10:
+                        #             break
+                        #         elif angle(vector, vector2) <= theta:
+                        #             new_nearby.append(pp2)
+                        #         break  
                     pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id- b.id))
             for pp1 in pdatas:
                 if len(pp1.nearby) >= 2:
@@ -154,7 +169,7 @@ class DataSites: #Data_position
             if len(res_crowd_list) == 0:
                 continue
             end = time.time()
-            print("- Cost ", end - start, "second in algo.")
+            print("- Cost ", end - start, "seconds in algo.")
             
             
             # find the largest crowd to init the arrow thinkness function 
