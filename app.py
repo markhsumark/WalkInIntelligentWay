@@ -119,6 +119,8 @@ def start():
 @app.route('/index')
 def index():
     global source
+    #globals.kill_t = True
+    time.sleep(1)
     globals.kill_t = False
     t = threading.Thread(target = track.start_stream, args = (source,))
     t.start()

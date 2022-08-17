@@ -199,7 +199,7 @@ def run(
         )
     outputs = [None] * nr_sources
     # ---------------------------------------------------------------------------------
-    n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
+    n_frame = 5 # 決定一次要分析幾個frame , n_frame must>= 2
     data_site = DataSites(n_frame)
     first_img = []
     cnt = 0

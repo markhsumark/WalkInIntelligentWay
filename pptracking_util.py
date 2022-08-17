@@ -1,7 +1,9 @@
+from re import T
 from turtle import back
 import numpy as np
 import math
 from math import sqrt
+from data_site import Data
 from yolov5.utils.general import (cv2)
 import os
 import threading
@@ -52,8 +54,8 @@ def show(title, im, wait = 0):
     if im.shape[0] >1000 or im.shape[1]>1000:
         im = cv2.resize(im,(920,540), interpolation=cv2.INTER_AREA)  
     cv2.imwrite("output_"+title+".jpg", im)
-    #cv2.imshow(title, im)
-    #cv2.waitKey(100)
+    cv2.imshow(title, im)
+    cv2.waitKey(100)
 def color_palette(pp_id:int): 
         x = pp_id % 10
         #rgb -> bgr
@@ -140,4 +142,17 @@ class DrawerManager:
         self.img = cv2.addWeighted(self.img, alpha, out, beta, gamma)
         self.lock.release()
     
+def b_search_pp(data_list, f, b, target_id):  
+    if f - b == 0:
+        return -1   # not found
+    
+    m = int((f- b)/ 2)    
+    middle_data:Data = data_list[m]
+    if middle_data.id == target_id:
+        return m
+    else:
+        if middle_data.id > target_id:
+            return b_search_pp(data_list, f, m-1, target_id)
+        elif middle_data.id < target_id:
+            return b_search_pp(data_list, m+1, b, target_id)
         

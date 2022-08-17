@@ -9,16 +9,6 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import (TextArea, DrawingArea, OffsetImage,
                                   AnnotationBbox)
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-#from matplotlib.cbook import get_sample_data
-#from matplotlib.backends.backend_gtk4agg import FigureCanvasQTAgg as FigureCanvas
-# def fig2img(fig):
-#     """Convert a Matplotlib figure to a PIL Image and return it"""
-#     import io
-#     buf = io.BytesIO()
-#     fig.savefig(buf)
-#     buf.seek(0)
-#     img = Image.open(buf)
-#     return img
   
 def heatmap(ppl_res, width, height):
     # goal: put the orig frame under the heatmap
@@ -36,23 +26,9 @@ def heatmap(ppl_res, width, height):
     x_grid = np.arange(0, width, grid_size)
     y_grid = np.arange(0, height, grid_size)
     x_mesh,y_mesh = np.meshgrid(x_grid,y_grid)
-    # print("X_mesh: ", x_mesh, "\n","y_mesh", y_mesh,"datatype: ", type(x_mesh), "\n")
-    # print("X_grid: ", x_grid, "\n","y_grid", y_grid, type(x_grid), "\n")
 
     x_c = x_mesh+(grid_size/2)
     y_c = y_mesh+(grid_size/2)
-    # print("x_c datatype", type(x_c))
-    #--------------------------
-    # imagebox = OffsetImage(background, zoom=0.2)
-    # imagebox.image.axes = ax
-    # ab = AnnotationBbox(imagebox, [0.15,0.5],
-    #                 xybox=(170., -50.),
-    #                 xycoords='data',
-    #                 boxcoords="offset points",
-    #                 pad=0.5
-    #                 )
-    #ax.add_artist(ab)
-    #--------------------------
 
     # QUARTIC KERNEL FUNCTION
     def kde_quartic(d,h):

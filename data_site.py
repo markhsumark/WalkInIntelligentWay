@@ -40,7 +40,7 @@ class DataSites: #Data_position
                 vector = pp_data.vector
                 start_xy = pp_data.xy
                 color = color_palette(id)
-                im = cv2.line(im , np.array(start_xy, dtype = int), np.array(start_xy + vector, dtype = int), color, 2) 
+                im = cv2.line(im , np.array(start_xy, dtype = int), np.array(start_xy + vector, dtype = int), color, 8) 
         return im  
     """def draw_trace(self):
         background = copy.deepcopy(self.background)
@@ -64,35 +64,34 @@ class DataSites: #Data_position
         start = time.time()
         arrow_record = self.records
         pdata_per_frame = []
-        # 這裡是每兩個frame處理一組動態資料，5個frame －＞4組態態資料
-        for fid in range(len(arrow_record)-1):
-            frame1 = arrow_record[fid]
-            frame2 = arrow_record[fid+1]
-            person_data = []
-            #找出每個pid的start位置以及位移量
-            for pid in frame1:
-                if pid in frame2:
-                    start_xy = np.array(frame1[pid])
-                    dx = frame2[pid][0] - frame1[pid][0]
-                    dy = frame2[pid][1] - frame1[pid][1]
-                    vector = np.array([dx, dy])
-                    nearby = []
-                    data = Data(pid, start_xy, vector, nearby)
-                    person_data.append(data) 
-                    """
-                    person_data = [data, data, data ,......]
-                    data = {
-                        "id": 1,  
-                        "start_xy": [100, 200], 
-                        "vertor" : [20, 50] ,
-                        "nearby":[ data, data, ...]
-                        } 
-                    """
-            # find how many people surround each person 
-            
-            if type == 0 and len(person_data) > 0:
-                person_data = self.compute_nearby(person_data, dis_edge)
-            pdata_per_frame.append(person_data)
+        # for fid in range(len(arrow_record)-1):
+        frame_start = arrow_record[0]
+        frame_end = arrow_record[-1]
+        person_data = []
+        #找出每個pid的start位置以及位移量
+        for pid in frame_start:
+            if pid in frame_end:
+                start_xy = np.array(frame_start[pid])
+                dx = frame_end[pid][0] - frame_start[pid][0]
+                dy = frame_end[pid][1] - frame_start[pid][1]
+                vector = np.array([dx, dy])
+                nearby = []
+                data = Data(pid, start_xy, vector, nearby)
+                person_data.append(data) 
+                """
+                person_data = [data, data, data ,......]
+                data = {
+                    "id": 1,  
+                    "start_xy": [100, 200], 
+                    "vertor" : [20, 50] ,
+                    "nearby":[ data, data, ...]
+                    } 
+                """
+        # find how many people surround each person 
+        
+        if type == 0 and len(person_data) > 0:
+            person_data = self.compute_nearby(person_data, dis_edge)
+        pdata_per_frame.append(person_data)
         end = time.time()
         print("- Cost ", end - start, "second in trans_data2ppdata.")
         return pdata_per_frame 
@@ -131,11 +130,9 @@ class DataSites: #Data_position
             # 這段用來找出 附近且走差不多方向 的人
             start = time.time()
             for pp1 in pdatas:
-                
                 # 周圍超過2人 
-                if len(pp1.nearby) >= 2:
+                if len(pp1.nearby) >= 2 and abs(pp1.vector[0]) + abs(pp1/vector[1]) >= 10:
                     new_nearby = [pp1]
-                    
                     for near_pp in pp1.nearby:
 			            # 找對應的pid，然後跟據條件合並向量
                         for pp2 in pdatas:
@@ -144,22 +141,10 @@ class DataSites: #Data_position
                                 vector = pp1.vector
                                 
                                 # if pp2 isn't move or move slow. (ignore unnessesary people data)
-                                if abs(vector[0]) <= 1 and abs(vector[1]) <= 1 and abs(vector2[0]) <= 1 and abs(vector2[1]) <= 1:
+                                if abs(vector2[0]) + abs(vector2[1]) <= 10:
                                     break
-                                # if vector[0] == 0 and vector[1] == 0:
-                                #     unit_vec1 = np.array([0, 0])
-                                # else:
-                                #     unit_vec1 = vector / dist(vector) 
-                                # if vector2[0] == 0 and vector2[1] == 0:
-                                #     unit_vec2 = np.array([0, 0])
-                                # else:
-                                #     unit_vec2 = vector2 / dist(vector2)
-                                
-                                # if dist(np.zeros(2),unit_vec1+ unit_vec2) >= 2**0.5: #不可超過90度
-                                #     new_nearby.append(pp2)
-                                if angle(vector, vector2) <= theta:
+                                elif angle(vector, vector2) <= theta:
                                     new_nearby.append(pp2)
-                                    
                                 break  
                     pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id- b.id))
             for pp1 in pdatas:
