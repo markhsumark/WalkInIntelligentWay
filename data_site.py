@@ -110,7 +110,7 @@ class DataSites: #Data_position
         
         return person_data
     
-    def draw_crowd_arrow(self,background,  color, distance_edge = 300):
+    def draw_crowd_arrow(self, background, color, distance_edge = 300):
         print("\n------- draw_crowd_arrow INFO:-------")
         theta = 30 # define similar direction's included angle
         print("- included angle: ", theta, " degree")
@@ -143,10 +143,9 @@ class DataSites: #Data_position
                             pp2 = pdatas[i_of_pp2]
                             vector2 =  pp2.vector
                             vector = pp1.vector
-                            
                             # if pp2 isn't move or move slow. (ignore unnessesary people data)
                             if abs(vector2[0]) + abs(vector2[1]) <= 2:
-                                break
+                                continue
                             elif angle(vector, vector2) <= theta:
                                 new_nearby.append(pp2)  
                         # for pp2 in pdatas:
@@ -161,7 +160,7 @@ class DataSites: #Data_position
                         #         elif angle(vector, vector2) <= theta:
                         #             new_nearby.append(pp2)
                         #         break  
-                    pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id- b.id))
+                    pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id - b.id))
             for pp1 in pdatas:
                 if len(pp1.nearby) >= 2:
                     crowd = Crowd(pp1.nearby)
@@ -177,7 +176,7 @@ class DataSites: #Data_position
             # remove duplicated crowd
             # 去除重複物件的方法: https://minayu.site/2018/12/技術小筆記-利用eq-hash-解決去除重複物件object
             largest_crowd = res_crowd_list[0]
-            
+            # compare which crowd is the largest if the crowd 
             for crowd in set(res_crowd_list):
                 if largest_crowd.size() < crowd.size():
                     largest_crowd = crowd 
@@ -186,10 +185,9 @@ class DataSites: #Data_position
             alpha, beta, gamma = 1, 0.3, 0
             worker_manager = DrawerManager(background, beta = 0.5)        
             for crowd in set(res_crowd_list):
-                # arrow_mask = crowd.get_arrow_mask(background, color, thick_fun = arrow_thinkness_func.execute)
-                # background = cv2.addWeighted(background, alpha, arrow_mask, beta, gamma)
                 
                 worker_manager.add_work(crowd, color, arrow_thinkness_func.execute)
+                # think_fun trans 4 times to transfor argument to ThicknessSigmoid.execute func
             time1 = time.time()
             worker_manager.work()
             time2 = time.time()

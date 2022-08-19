@@ -1,8 +1,13 @@
+from tracemalloc import start
 import numpy as np
 from yolov5.utils.general import (cv2)
-from numpy import sqrt, tri
+from numpy import float64, sqrt, tri, vectorize
+from numba import jit
+import numba
 from PIL import Image
 import math ,threading, time
+from multiprocessing import Pool
+from queue import Queue
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -17,11 +22,11 @@ def heatmap(ppl_res, width, height):
     h = grid_size * 10 # radius which impacts the range
     x = [] # ppl x site
     y = [] # ppl y site
-    ax = []
+    #ax = []
     for key in ppl_res.keys() :
         x.append(ppl_res[key][0])
         y.append(height - ppl_res[key][1])
-        ax.append((ppl_res[key][0], height - ppl_res[key][1]))
+        #ax.append((ppl_res[key][0], height - ppl_res[key][1]))
 
     x_grid = np.arange(0, width, grid_size)
     y_grid = np.arange(0, height, grid_size)
@@ -29,40 +34,60 @@ def heatmap(ppl_res, width, height):
 
     x_c = x_mesh+(grid_size/2)
     y_c = y_mesh+(grid_size/2)
-
+    x_c_len = len(x_c)
+    x_c_row_len = len(x_c[0])
     # QUARTIC KERNEL FUNCTION
-    def kde_quartic(d,h):
-        dn = d/h
-        P = (15/16)*(1-dn**2)**2
-        return P
+    
     # print("x_c:",len(x_c), "x_c[0]:", len(x_c[0]), "\n")
-    int_list=[]
-    for j in range(len(x_c)):
-        int_row = []
-        for k in range(len(x_c[0])):
-            #print("k: ", k, "\n")
-            kde_value_list = []
-            for i in range(len(x)):
-                d = math.sqrt((x_c[j][k]-x[i])**2+(y_c[j][k]-y[i])**2) #d : the radius in the kenel 
-                if d<=h:
-                    # p : density value
-                    p = kde_quartic(d,h)
-                else:
-                    p = 0
-                kde_value_list.append(p)
-            #print("kde_value_list: ", kde_value_list, "\n")          
-            p_total = sum(kde_value_list)
-            int_row.append(p_total)
-        int_list.append(int_row)
+    x_c, y_c = np.array(x_c), np.array(y_c)
+    x, y = np.array(x), np.array(y)
+    #res = []
+    
+    @jit(nopython=True, nogil=True)
+    def cal_int(j,k):
+        kde_value, i, x_len  = 0, 0, len(x)
+        while i != x_len:
+            #d = math.dist([x_c[j][k], y_c[j][k]], [x[i], y[i]])
+            d = np.sqrt((x_c[j][k]-x[i])**2+(y_c[j][k]-y[i])**2) #d : the radius in the kernel 
+            if d<=h:
+                dn = d/h
+                kde_value += (15/16)*(1-dn**2)**2
+            i += 1
+        return kde_value
+    
+    # def cal_k(j, q):
+    #     tmp_arr = [cal_int(j, k) for k in range(x_c_row_len)]
+    #     q.put(tmp_arr)
+    
+    # def multithreading():
+    #     threads = []
+    #     q = Queue()
+    #     j = 0
+    #     while j < x_c_len:
+    #         tmp = 5 if x_c_len-j >= 5 else x_c_len-j
+    #         for i in range(tmp):
+    #             t = threading.Thread(target=cal_k, args=(i, q))
+    #             t.start()
+    #             threads.append(t)
+    #         for thread in threads:
+    #             thread.join()
+    #         j += tmp
+    #         for _ in range(tmp):
+    #             res.append(q.get())
+        
+    intensity = np.array([[cal_int(j,k) for k in range(x_c_row_len)] for j in range(x_c_len)])
+    #multithreading()
+    #intensity = np.array(res)
+    # print("int_list: ", int_list)
+    # print("intensity: ", intensity)
+    # print(np.array_equal(int_list, intensity))
     # ---------------------cv2 to pil
     # color_coverted = cv2.cvtColor(background, cv2.COLOR_BGR2RGBA)
     # pil_image = Image.fromarray(color_coverted)       
     #-----------------------plt
    # plt.ion()
-    intensity=np.array(int_list)
    
     fig = plt.figure("heatmap", dpi=150)    
-    print("fig datatype : ", type(fig), "\n")
 
     plt.clf() # clear 
     

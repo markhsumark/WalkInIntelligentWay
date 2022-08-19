@@ -9,17 +9,19 @@ import threading
 
 
 class ThinknessSigmoid:
+    # 控制箭頭粗細的數學式
     def __init__(self, t):
         self.max = t
     def execute(self, n):
+        # 實驗出來目前最好看的參數
         x = (n/self.max)* 8 -4
         if x >= 0:
-            z = math.exp(-x)
             sig = 1 / (1 + z)
             return sig  * 10
         else:
             z = math.exp(x)
             sig = z / (1 + z)
+            z = math.exp(-x)
             return sig * 10
 
 def angle(v1, v2):
@@ -28,13 +30,16 @@ def angle(v1, v2):
     dx2 = v2[0] 
     dy2 = v2[1]
     angle1 = math.atan2(dy1, dx1)
+    # arc to degree
     angle1 = int(angle1 * 180/math.pi)
     # print(angle1)
     angle2 = math.atan2(dy2, dx2)
     angle2 = int(angle2 * 180/math.pi)
     # print(angle2)
+    #if these slope are positive/negative 
     if angle1*angle2 >= 0:
         included_angle = abs(angle1-angle2)
+    #if they have different slope
     else:
         included_angle = abs(angle1) + abs(angle2)
         if included_angle > 180:
@@ -53,11 +58,11 @@ def show(title, im, wait = 0):
     if im.shape[0] >1000 or im.shape[1]>1000:
         w, h = im.shape[0:2]
         a = w*1.0/h
-        
-        im = cv2.resize(im,(int(540*a),540), interpolation=cv2.INTER_AREA)  
+        show_w = 1080
+        im = cv2.resize(im,(show_w,int(920*show_w)), interpolation=cv2.INTER_AREA)  
     cv2.imwrite("output_"+title+".jpg", im)
-    cv2.imshow(title, im)
-    cv2.waitKey(100)
+    # cv2.imshow(title, im)
+    # cv2.waitKey(100)
 def color_palette(pp_id:int): 
         x = pp_id % 10
         #rgb -> bgr
