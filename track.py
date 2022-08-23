@@ -369,7 +369,7 @@ def run(
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
-                    heatmap(ppl_res, w, h)
+                    heatmap(frame_idx, ppl_res, w, h)
                     heatmap_now_time = time.time()
                     temp = heatmap_now_time-heatmap_prev_time
                     total_heatmap_time += temp

@@ -7,7 +7,7 @@
 /datasets/*
 /output.jpg
 output_Arrow.jpg
-output_Trace.jpg
-ourput_Box.jpg
-output_heatmap.jpg
-*.jpg
+# output_Trace.jpg
+# ourput_Box.jpg
+# output_heatmap.jpg
+# *.jpg

@@ -136,30 +136,30 @@ class DataSites: #Data_position
                     new_nearby = [pp1]
                     for near_pp in pp1.nearby:
 			            # 找對應的pid，然後跟據條件合並向量
-                        i_of_pp2 = b_search_pp(pdatas, 0, len(pdatas)-1, near_pp.id)
-                        if i_of_pp2 == -1:
-                            print("not found")
-                        else:
-                            pp2 = pdatas[i_of_pp2]
-                            vector2 =  pp2.vector
-                            vector = pp1.vector
-                            # if pp2 isn't move or move slow. (ignore unnessesary people data)
-                            if abs(vector2[0]) + abs(vector2[1]) <= 2:
-                                continue
-                            elif angle(vector, vector2) <= theta:
-                                new_nearby.append(pp2)  
-                        # for pp2 in pdatas:
-                        #     if pp2.id == near_pp.id:
-                        #         print("found")
-                        #         vector2 =  pp2.vector
-                        #         vector = pp1.vector
+                        # i_of_pp2 = b_search_pp(pdatas, 0, len(pdatas)-1, near_pp.id)
+                        # if i_of_pp2 == -1:
+                        #     print("not found")
+                        # else:
+                        #     pp2 = pdatas[i_of_pp2]
+                        #     vector2 =  pp2.vector
+                        #     vector = pp1.vector
+                        #     # if pp2 isn't move or move slow. (ignore unnessesary people data)
+                        #     if abs(vector2[0]) + abs(vector2[1]) <= 2:
+                        #         continue
+                        #     elif angle(vector, vector2) <= theta:
+                        #         new_nearby.append(pp2)  
+                        for pp2 in pdatas:
+                            if pp2.id == near_pp.id:
+                                # print("found")
+                                vector2 =  pp2.vector
+                                vector = pp1.vector
                                 
-                        #         # if pp2 isn't move or move slow. (ignore unnessesary people data)
-                        #         if abs(vector2[0]) + abs(vector2[1]) <= 10:
-                        #             break
-                        #         elif angle(vector, vector2) <= theta:
-                        #             new_nearby.append(pp2)
-                        #         break  
+                                # if pp2 isn't move or move slow. (ignore unnessesary people data)
+                                if abs(vector2[0]) + abs(vector2[1]) <= 10:
+                                    break
+                                elif angle(vector, vector2) <= theta:
+                                    new_nearby.append(pp2)
+                                break  
                     pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id - b.id))
             for pp1 in pdatas:
                 if len(pp1.nearby) >= 2:

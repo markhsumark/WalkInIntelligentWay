@@ -16,12 +16,12 @@ class ThinknessSigmoid:
         # 實驗出來目前最好看的參數
         x = (n/self.max)* 8 -4
         if x >= 0:
+            z = math.exp(-x)
             sig = 1 / (1 + z)
             return sig  * 10
         else:
             z = math.exp(x)
             sig = z / (1 + z)
-            z = math.exp(-x)
             return sig * 10
 
 def angle(v1, v2):
@@ -57,12 +57,11 @@ COLOR_LONG = (255, 0, 0)
 def show(title, im, wait = 0):
     if im.shape[0] >1000 or im.shape[1]>1000:
         w, h = im.shape[0:2]
-        a = w*1.0/h
         show_w = 1080
         im = cv2.resize(im,(show_w,int(920*show_w)), interpolation=cv2.INTER_AREA)  
     cv2.imwrite("output_"+title+".jpg", im)
-    # cv2.imshow(title, im)
-    # cv2.waitKey(100)
+   # cv2.imshow(title, im)
+    cv2.waitKey(100)
 def color_palette(pp_id:int): 
         x = pp_id % 10
         #rgb -> bgr
