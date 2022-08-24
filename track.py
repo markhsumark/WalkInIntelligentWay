@@ -43,7 +43,7 @@ from strong_sort.utils.parser import get_config
 from strong_sort.strong_sort import StrongSORT
 from heatmap import heatmap
 from data_site import DataSites
-from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show
+from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show, BackgroundManager, FlowWorker
 #from curve import draw_trace
 import copy
 import matplotlib.pyplot as plt
@@ -201,10 +201,18 @@ def run(
     # ---------------------------------------------------------------------------------
     n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
     data_site = DataSites(n_frame)
+    b_manager = BackgroundManager()
+    flow_worker = FlowWorker(
+        data_site= data_site,
+        b_manager= b_manager
+    )
+    flow_worker.setDaemon(True)
     first_img = []
     cnt = 0
     min_size = []
     ff=0
+
+    flow_worker.start()
     # ---------------------------------------------------------------------------------
     # Run tracking
     model.warmup(imgsz=(1 if pt else nr_sources, 3, *imgsz))  # warmup
@@ -272,7 +280,10 @@ def run(
             txt_path = str(save_dir / 'tracks' / txt_file_name)  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
             imc = im0.copy() if save_crop else im0  # for save_crop
+
             background = copy.deepcopy(im0)
+            b_manager.refresh(background)
+
             annotator = Annotator(im0, line_width=2, pil=not ascii)
             if cfg.STRONGSORT.ECC:  # camera motion
                 strongsort_list[i].tracker.camera_update(prev_frames[i], curr_frames[i])
@@ -380,18 +391,18 @@ def run(
                 # show arrow diagram(opencv)
                 if show_arrow or show_trace:   
                     data_site.add_record(ppl_res)
-                    if show_arrow:
-                        if data_site.count_frame >= data_site.frame_max:
-                            edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
+                    # if show_arrow:
+                        # if data_site.count_frame >= data_site.frame_max:
+                        #     edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
                             
-                            arrow_prev_time = time.time()
-                            arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
-                            arrow_now_time = time.time()
-                            temp = arrow_now_time-arrow_prev_time
-                            total_arrow_time += temp
-                            arrow_array.append(temp)
-                            print("Arrow_SINGLE_TIME:",temp)
-                            show("Arrow", arrow_img)
+                        #     arrow_prev_time = time.time()
+                        #     arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
+                        #     arrow_now_time = time.time()
+                        #     temp = arrow_now_time-arrow_prev_time
+                        #     total_arrow_time += temp
+                        #     arrow_array.append(temp)
+                        #     print("Arrow_SINGLE_TIME:",temp)
+                        #     show("Arrow", arrow_img)
                     if show_trace:
                         if cnt == 0:
                             tmp_h, tmp_w = im0.shape[:2]

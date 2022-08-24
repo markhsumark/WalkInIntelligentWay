@@ -6,6 +6,8 @@ from math import sqrt
 from yolov5.utils.general import (cv2)
 import os
 import threading
+import copy
+import time
 
 
 class ThicknessSigmoid:
@@ -164,4 +166,48 @@ def b_search_pp(data_list, f, b, target_id):
             return b_search_pp(data_list, f, m, target_id)
         elif middle_data.id < target_id:
             return b_search_pp(data_list, m+1, b, target_id)
+
+class BackgroundManager:
+    def __init__(self):
+        self.img = []
+        self.lock = threading.Lock()
+    def refresh(self, new_img):
+        self.lock.acquire()
+        self.img = new_img
+        self.lock.release()
+    def get_image(self):
+        temp = []
+        self.lock.acquire()
+        temp = copy.deepcopy(self.img)
+        self.lock.release()
+        return temp
+
+class FlowWorker(threading.Thread):
+    def __init__(self, data_site, b_manager):
+        threading.Thread.__init__(self)
+        self.data_site = data_site
+        self.b_manager = b_manager
+        # self.state = False
+    # def start(self, a): 
+    #     self.state = a
+    def run(self):
+        data_site = self.data_site
+        b_manager = self.b_manager
+        while True:
+            if data_site.count_frame >= data_site.frame_max:
+                background = b_manager.get_image()
+                edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
+                
+                arrow_prev_time = time.time()
+                arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
+                arrow_now_time = time.time()
+                temp = arrow_now_time-arrow_prev_time
+                # total_arrow_time += temp
+                # arrow_array.append(temp)
+                print("Arrow_SINGLE_TIME:",temp)
+                show("Arrow", arrow_img)
+                print('flow sleep ......')
+                time.sleep(1)
+
+
         
