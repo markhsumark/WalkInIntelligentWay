@@ -1,7 +1,9 @@
 from ast import Lambda
 from faulthandler import disable
+
+from matplotlib.image import imsave
 from crowd import Crowd
-from pptracking_util import dist, ThinknessSigmoid, color_palette, DrawerManager, angle, b_search_pp
+from pptracking_util import dist, ThicknessSigmoid, color_palette, DrawerManager, angle, b_search_pp
 from scipy.spatial.distance import cdist
 from collections import deque
 from functools import cmp_to_key
@@ -111,9 +113,7 @@ class DataSites: #Data_position
         return person_data
     
     def draw_crowd_arrow(self, background, color, distance_edge = 300):
-        print("\n------- draw_crowd_arrow INFO:-------")
         theta = 30 # define similar direction's included angle
-        print("- included angle: ", theta, " degree")
         background = np.array(background, dtype = np.uint8) 
         
         
@@ -180,13 +180,11 @@ class DataSites: #Data_position
             for crowd in set(res_crowd_list):
                 if largest_crowd.size() < crowd.size():
                     largest_crowd = crowd 
-            arrow_thinkness_func = ThinknessSigmoid(largest_crowd.size())
+            arrow_thickness_func = ThicknessSigmoid(largest_crowd.size())
             
-            alpha, beta, gamma = 1, 0.3, 0
             worker_manager = DrawerManager(background, beta = 0.5)        
             for crowd in set(res_crowd_list):
-                
-                worker_manager.add_work(crowd, color, arrow_thinkness_func.execute)
+                worker_manager.add_work(crowd, color, arrow_thickness_func.execute)
                 # think_fun trans 4 times to transfor argument to ThicknessSigmoid.execute func
             time1 = time.time()
             worker_manager.work()
@@ -194,7 +192,6 @@ class DataSites: #Data_position
             print("- Cost: ", time2 - time1,"second in drawing")
             
             background = worker_manager.img
-        print("-------- draw_crowd_arrow DONE -------\n")
         return background
                 
     
