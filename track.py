@@ -44,6 +44,7 @@ from strong_sort.strong_sort import StrongSORT
 from heatmap import heatmap
 from data_site import DataSites
 from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show, BackgroundManager, FlowWorker
+from optflow import Optflow
 #from curve import draw_trace
 import copy
 import matplotlib.pyplot as plt
@@ -83,6 +84,7 @@ def video_command():
     parser.add_argument('--show-arrow', action='store_true', default=True,help='show arrow')
     parser.add_argument('--show-trace', action='store_true', default=True ,help='show trace')
     parser.add_argument('--show-original', action='store_true',help='show original')
+    parser.add_argument('--show-optflow', action='store_true',help='show optflow')
     parser.add_argument('--wait', action='store_true', help='when showing img, waiting for user command to continue')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
@@ -136,6 +138,7 @@ def run(
         show_arrow = False,
         show_trace = False,
         show_original = False,
+        show_optflow = False,
         wait = False
 ):
 
@@ -199,20 +202,15 @@ def run(
         )
     outputs = [None] * nr_sources
     # ---------------------------------------------------------------------------------
+    prev_img = None
+    prev_features = None
     n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
     data_site = DataSites(n_frame)
     b_manager = BackgroundManager()
-    flow_worker = FlowWorker(
-        data_site= data_site,
-        b_manager= b_manager
-    )
-    flow_worker.setDaemon(True)
     first_img = []
     cnt = 0
     min_size = []
     ff=0
-
-    flow_worker.start()
     # ---------------------------------------------------------------------------------
     # Run tracking
     model.warmup(imgsz=(1 if pt else nr_sources, 3, *imgsz))  # warmup
@@ -356,27 +354,33 @@ def run(
                 yolo_array.append(t3-t2)
                 strongsort_array.append(t5-t4)
                 LOGGER.info(f'{s}Done. YOLO:({t3 - t2:.3f}s), StrongSORT:({t5 - t4:.3f}s)')
-                # print(ppl_res)
 
             else:
                 strongsort_list[i].increment_ages()
                 LOGGER.info('No detections')
-            # def thread_arrow():
-            #      arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = 800)
-            #      show("Arrow", arrow_img , wait = arrow_wait)
-            # def thread_trace(pdata, first_img):
-            #     curve_img = draw_trace(pdata, first_img)
-            #     show("Curve", curve_img, wait = trace_wait)
-                
-            # show heatmap (matplotlib)
+
+            
             global total_heatmap_time
             global total_arrow_time
             global total_trace_time
             globals.n_of_people = len(ppl_res)
             print("People count: ", len(ppl_res))
+            
             people_nums_array.append(len(ppl_res))
             
+            
+           
+            
+            
             if ppl_res:
+                if show_optflow:
+                    optflow = Optflow((100, 100))
+                    
+                    result = optflow.getOpticalFlow(prev_img, im0, prev_features)
+                    optflow.draw_optflow(im0, prev_features, result)
+                    prev_img = im0
+                    prev_features = optflow.get_features(im0, outputs)
+
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
@@ -391,18 +395,18 @@ def run(
                 # show arrow diagram(opencv)
                 if show_arrow or show_trace:   
                     data_site.add_record(ppl_res)
-                    # if show_arrow:
-                        # if data_site.count_frame >= data_site.frame_max:
-                        #     edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
+                    if show_arrow:
+                        if data_site.count_frame >= data_site.frame_max:
+                            edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
                             
-                        #     arrow_prev_time = time.time()
-                        #     arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
-                        #     arrow_now_time = time.time()
-                        #     temp = arrow_now_time-arrow_prev_time
-                        #     total_arrow_time += temp
-                        #     arrow_array.append(temp)
-                        #     print("Arrow_SINGLE_TIME:",temp)
-                        #     show("Arrow", arrow_img)
+                            arrow_prev_time = time.time()
+                            arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
+                            arrow_now_time = time.time()
+                            temp = arrow_now_time-arrow_prev_time
+                            total_arrow_time += temp
+                            arrow_array.append(temp)
+                            print("Arrow_SINGLE_TIME:",temp)
+                            show("Arrow", arrow_img)
                     if show_trace:
                         if cnt == 0:
                             tmp_h, tmp_w = im0.shape[:2]
