@@ -32,20 +32,20 @@ class Optflow:
         pointed_img = copy.deepcopy(img)
         features = [] 
 
-        position = np.array([unit_w, unit_h], dtype=np.float32)
-        print(position)
+        position = np.array([unit_w, unit_h], dtype=np.int32)
+        print(position[0])
         while True:
-            print(masked_img[position[0], position[1]])
-            if masked_img[position[0], position[1]] is not [0, 0, 0]: 
-                pointed_img = cv2.circle(pointed_img, (position[0], position[1]), 3, [0,255,0], -1)
-                features.append(position)
-            position += np.array([unit_w, 0])
             if position[0] >= w:
                 position[0] = unit_w
                 position[1] += unit_h
                 continue
             if position[1] >= h:
                 break
+            if masked_img[position[0], position[1]] is not [0, 0, 0]: 
+                pointed_img = cv2.circle(pointed_img, (position[0], position[1]), 10, [0,255,0], -1)
+                features.append(position)
+            position += np.array([unit_w, 0])
+            
         cv2.imwrite('features_points.jpg', pointed_img)
         return features
 
