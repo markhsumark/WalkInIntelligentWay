@@ -374,13 +374,13 @@ def run(
             
             if ppl_res:
                 if show_optflow:
-                    optflow = Optflow((100, 100))
+                    optflow = Optflow((10, 10))
                     
                     result = optflow.getOpticalFlow(prev_img, im0, prev_features)
                     optflow.draw_optflow(im0, prev_features, result)
                     prev_img = im0
                     prev_features = optflow.get_features(im0, outputs)
-
+                    time.sleep(1)
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
