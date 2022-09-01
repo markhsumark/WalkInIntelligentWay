@@ -204,6 +204,7 @@ def run(
     # ---------------------------------------------------------------------------------
     prev_img = None
     prev_features = None
+    ppbox_mask = None
     n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
     data_site = DataSites(n_frame)
     b_manager = BackgroundManager()
@@ -374,13 +375,16 @@ def run(
             
             if ppl_res:
                 if show_optflow:
-                    optflow = Optflow((10, 10))
-                    
-                    result = optflow.getOpticalFlow(prev_img, im0, prev_features)
-                    optflow.draw_optflow(im0, prev_features, result)
+                    optflow = Optflow()     # set feature density (amount)
+                    ppbox_mask= optflow.get_ppbox_mask(im0, outputs)
+                    if prev_features is not None:
+                        result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
+                        # print(result0, result1)
+                        optflow.draw_optflow(im0, result0, result1)
+                    # -----
                     prev_img = im0
-                    prev_features = optflow.get_features(im0, outputs)
-                    time.sleep(1)
+                    prev_features = optflow.get_features(im0, ppbox_mask, (10, 10))
+                    # print(prev_features)s
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
