@@ -56,7 +56,7 @@ COLOR_CLOSE = (0, 0, 255)
 COLOR_MIDDLE = (0, 255, 0)
 COLOR_LONG = (255, 0, 0)
         
-def show(title, im, wait = 0):
+def show(title, im, wait = 0, showout = False):
     if im.shape[0] >1000 or im.shape[1]>1000:
         w, h = im.shape[0:2]
         im = cv2.resize(im,(1080,int(1080*w/h)), interpolation=cv2.INTER_AREA) 
@@ -65,7 +65,8 @@ def show(title, im, wait = 0):
         cv2.imwrite("output_"+title+".jpg", im)
     except:
         print('---save image of'+ " output_"+title+".jpg" + 'has an error')
-   # cv2.imshow(title, im)
+    if showout:
+        cv2.imshow(title, im)
     cv2.waitKey(100)
 def color_palette(pp_id:int): 
         x = pp_id % 10

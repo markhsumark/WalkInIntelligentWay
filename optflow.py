@@ -112,7 +112,7 @@ class Optflow:
             
             # cv2.imwrite('optical_flow.jpg', temp_frame)
             # time.sleep(0.3)
-        show('optical_flow', temp_frame)
+        show('optical_flow', temp_frame, showout = True)
         cv2.imwrite('optical_flow.jpg', temp_frame)    
             
             
