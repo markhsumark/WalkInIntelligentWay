@@ -94,6 +94,7 @@ opt = video_command()
 total_heatmap_time = 0
 total_trace_time = 0
 total_arrow_time = 0
+total_optflow_time = 0
 n_of_people = 0
 people_nums_array = []
 heatmap_array = []
@@ -364,6 +365,7 @@ def run(
             global total_heatmap_time
             global total_arrow_time
             global total_trace_time
+            global total_optflow_time
             globals.n_of_people = len(ppl_res)
             print("People count: ", len(ppl_res))
             
@@ -375,16 +377,18 @@ def run(
             
             if ppl_res:
                 if show_optflow:
+                    optflow_prev_time = time.time()
                     optflow = Optflow()     # set feature density (amount)
                     ppbox_mask= optflow.get_ppbox_mask(im0, outputs)
                     if prev_features is not None:
                         result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
-                        # print(result0, result1)
                         optflow.draw_optflow(im0, result0, result1)
-                    # -----
                     prev_img = im0
-                    prev_features = optflow.get_features(im0, ppbox_mask, (10, 10))
-                    # print(prev_features)s
+                    prev_features = optflow.get_features(im0, ppbox_mask, (15, 15))
+                    optflow_now_time = time.time()
+                    temp = optflow_now_time-optflow_prev_time
+                    total_optflow_time += temp
+                    print("OpticlaFlow_SINGLE_TIME:", temp)
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
@@ -530,6 +534,7 @@ def main(opt):
     time_start = time.time()
     run(**vars(opt))
     time_end = time.time()
+    print("TOTAL OPTICAL FLOW TIME:", total_optflow_time)
     print("TOTAL HEATMAP TIME:", total_heatmap_time)
     print("TOTAL ARROW TIME:", total_arrow_time)
     print("TOTAL TRACE TIME", total_trace_time)
