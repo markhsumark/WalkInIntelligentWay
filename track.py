@@ -206,6 +206,7 @@ def run(
     prev_img = None
     prev_features = None
     ppbox_mask = None
+    temp_count = 0
     n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
     data_site = DataSites(n_frame)
     b_manager = BackgroundManager()
@@ -371,12 +372,12 @@ def run(
             
             people_nums_array.append(len(ppl_res))
             
-            
-           
-            
-            
+
+            temp_count += 1
             if ppl_res:
-                if show_optflow:
+                # !!!(For testing)show an optflow result every 10 frame
+                optflow_freq = 10
+                if show_optflow and temp_count % optflow_freq == 0:
                     optflow_prev_time = time.time()
                     optflow = Optflow()     # set feature density (amount)
                     ppbox_mask= optflow.get_ppbox_mask(im0, outputs)
@@ -389,6 +390,7 @@ def run(
                     temp = optflow_now_time-optflow_prev_time
                     total_optflow_time += temp
                     print("OpticlaFlow_SINGLE_TIME:", temp)
+                    
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
