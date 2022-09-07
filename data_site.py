@@ -27,7 +27,7 @@ class Data:
         return 'id:{}, nearby:{}\n'.format(self.id, [n.id for n in self.nearby])
     
     
-class DataSites: #Data_position
+class PPTrackHandler: #Data_position
     def __init__(self, max):
         self.curve_img = []
         self.pdata_per_frame = []
@@ -111,11 +111,46 @@ class DataSites: #Data_position
                     person_data[col].nearby.append(person_data[row])
         
         return person_data
-    
-    def draw_crowd_arrow(self, background, color, distance_edge = 300):
+    def get_crowd_list(self, pdatas): 
         theta = 30 # define similar direction's included angle
-        background = np.array(background, dtype = np.uint8) 
+        res_crowd_list = []
         
+        # 這段用來找出 附近且走差不多方向 的人
+        start = time.time()
+        for pp1 in pdatas:
+            # 周圍超過2人 
+            if len(pp1.nearby) <= 1 or int(abs(pp1.vector[0]) + abs(pp1.vector[1])) <= 1:
+                pp1.nearby = []
+            else:
+                new_nearby = [pp1]
+                for near_pp in pp1.nearby:
+                    # 找對應的pid，然後跟據條件合並向量
+                    for pp2 in pdatas:
+                        if pp2.id == near_pp.id:
+                            # print("found")
+                            vector2 =  pp2.vector
+                            vector = pp1.vector
+                            
+                            # if pp2 isn't move or move slow. (ignore unnessesary people data)
+                            if abs(vector2[0]) + abs(vector2[1]) <= 10:
+                                break
+                            elif angle(vector, vector2) <= theta:
+                                new_nearby.append(pp2)
+                            break  
+                pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id - b.id))
+        for pp1 in pdatas:
+            if len(pp1.nearby) >= 2:
+                crowd = Crowd(pp1.nearby)
+                res_crowd_list.append(crowd)
+        if len(res_crowd_list) == 0:
+            print("NO CROWD!!")
+            return
+        end = time.time()
+        print("- Cost ", end - start, "seconds in 'get_crowd_list()' algo.")
+            
+        return res_crowd_list
+    def draw_crowd_arrow(self, background, color, distance_edge = 300):
+        background = np.array(background, dtype = np.uint8) 
         
         res_crowd_list = []
         
@@ -124,59 +159,16 @@ class DataSites: #Data_position
         
         # 取頭尾
         for pdatas in pdata_per_frame:
-            # TODO remove the people that don't move
-            
-            # 這段用來找出 附近且走差不多方向 的人
-            start = time.time()
-            for pp1 in pdatas:
-                # 周圍超過2人 
-                if len(pp1.nearby) <= 1 or int(abs(pp1.vector[0]) + abs(pp1.vector[1])) <= 1:
-                    pp1.nearby = []
-                else:
-                    new_nearby = [pp1]
-                    for near_pp in pp1.nearby:
-			            # 找對應的pid，然後跟據條件合並向量
-                        # i_of_pp2 = b_search_pp(pdatas, 0, len(pdatas)-1, near_pp.id)
-                        # if i_of_pp2 == -1:
-                        #     print("not found")
-                        # else:
-                        #     pp2 = pdatas[i_of_pp2]
-                        #     vector2 =  pp2.vector
-                        #     vector = pp1.vector
-                        #     # if pp2 isn't move or move slow. (ignore unnessesary people data)
-                        #     if abs(vector2[0]) + abs(vector2[1]) <= 2:
-                        #         continue
-                        #     elif angle(vector, vector2) <= theta:
-                        #         new_nearby.append(pp2)  
-                        for pp2 in pdatas:
-                            if pp2.id == near_pp.id:
-                                # print("found")
-                                vector2 =  pp2.vector
-                                vector = pp1.vector
-                                
-                                # if pp2 isn't move or move slow. (ignore unnessesary people data)
-                                if abs(vector2[0]) + abs(vector2[1]) <= 10:
-                                    break
-                                elif angle(vector, vector2) <= theta:
-                                    new_nearby.append(pp2)
-                                break  
-                    pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id - b.id))
-            for pp1 in pdatas:
-                if len(pp1.nearby) >= 2:
-                    crowd = Crowd(pp1.nearby)
-                    res_crowd_list.append(crowd)
-            if len(res_crowd_list) == 0:
-                continue
-            end = time.time()
-            print("- Cost ", end - start, "seconds in algo.")
-            
-            
-            # find the largest crowd to init the arrow thinkness function 
-            
+
+            res_crowd_list= self.get_crowd_list(self, pdatas)
+
+            largest_crowd = res_crowd_list[0]
+            """
             # remove duplicated crowd
             # 去除重複物件的方法: https://minayu.site/2018/12/技術小筆記-利用eq-hash-解決去除重複物件object
-            largest_crowd = res_crowd_list[0]
             # compare which crowd is the largest if the crowd 
+            # find the largest crowd to init the arrow thinkness function 
+            """
             for crowd in set(res_crowd_list):
                 if largest_crowd.size() < crowd.size():
                     largest_crowd = crowd 
@@ -192,7 +184,7 @@ class DataSites: #Data_position
             print("- Cost: ", time2 - time1,"second in drawing")
             
             background = worker_manager.img
-        return background
+        return background, set(res_crowd_list)
                 
     
 

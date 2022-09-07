@@ -42,7 +42,7 @@ from yolov5.utils.plots import Annotator, colors, save_one_box
 from strong_sort.utils.parser import get_config
 from strong_sort.strong_sort import StrongSORT
 from heatmap import heatmap
-from data_site import DataSites
+from data_site import PPTrackHandler
 from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show, BackgroundManager, FlowWorker
 from optflow import Optflow
 #from curve import draw_trace
@@ -207,7 +207,7 @@ def run(
     prev_features = None
     ppbox_mask = None
     n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
-    data_site = DataSites(n_frame)
+    pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
     first_img = []
     cnt = 0
@@ -402,13 +402,13 @@ def run(
                     #t_heatmap.start()
                 # show arrow diagram(opencv)
                 if show_arrow or show_trace:   
-                    data_site.add_record(ppl_res)
+                    pptrack_handler.add_record(ppl_res)
                     if show_arrow:
-                        if data_site.count_frame >= data_site.frame_max:
+                        if pptrack_handler.count_frame >= pptrack_handler.frame_max:
                             edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
                             
                             arrow_prev_time = time.time()
-                            arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
+                            arrow_img, crowd_list = pptrack_handler.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time
                             total_arrow_time += temp
@@ -425,10 +425,10 @@ def run(
                             #print("This is img: ", first_img)
                             first_img = transparent
                             cnt = 1
-                        if data_site.count_frame >= data_site.frame_max:
-                            pdata = data_site.trans_data2ppdata(type = 1)
+                        if pptrack_handler.count_frame >= pptrack_handler.frame_max:
+                            pdata = pptrack_handler.trans_data2ppdata(type = 1)
                             trace_prev_time = time.time()
-                            curve_img = data_site.draw_trace(pdata, first_img)
+                            curve_img = pptrack_handler.draw_trace(pdata, first_img)
                             background = cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)
                             #print(curve_img.shape, background.shape)
                             curve_img = cv2.addWeighted(curve_img, 1, background, 1, 0)
