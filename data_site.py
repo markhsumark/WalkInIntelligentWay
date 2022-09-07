@@ -179,7 +179,7 @@ class PPTrackHandler: #Data_position
         print("- Cost: ", time2 - time1,"second in drawing")
         
         background = worker_manager.img
-        return background, set(res_crowd_list)
+        return background
                 
     
 

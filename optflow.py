@@ -1,9 +1,12 @@
+from turtle import left
 import numpy as np
 import threading
 from yolov5.utils.general import (cv2)
 import copy
 import time
 from pptracking_util import dist, show
+from collections import deque
+
 class Optflow: 
     def __init__(self): 
         self.lk_params = dict(  winSize = (15, 15), 
@@ -25,6 +28,7 @@ class Optflow:
             mask[start_y:end_y, start_x:end_x] = box_img
         cv2.imwrite('mask.jpg', mask)
         return mask
+        
     
     # check whether in people boxes
     def is_in_ppbox(self, point, mask):
@@ -34,30 +38,51 @@ class Optflow:
         return False
     
     # get all needed points position in given image
-    def get_features(self, img, masked_img, feature_shape):
-        w, h = img.shape[0:2]
-        unit_w = w//feature_shape[0]
-        unit_h = h//feature_shape[1]
+    def get_features(self, img, masked_img, feature_shape = (20, 20)):
+        states = np.zeros(feature_shape, dtype = np.bool)
+
+        h, w = img.shape[0:2]
+        unit_h = h//feature_shape[0]
+        unit_w = w//feature_shape[1]
 
         pointed_img = copy.deepcopy(img)
         features = [] 
 
         # init start position
-        position = np.array([unit_h, unit_w], dtype=np.int32)
+        now_point = np.array([0, 0])
+        position = np.array([unit_w, unit_h], dtype=np.int32)
+        # 先找出人周圍的點（包含在人的框框內的）
         while True:
-            if position[1] >= w:
-                position[0] += unit_h
-                position[1] = unit_w
+            if position[1] >= h:
+                position[0] += unit_w
+                position[1] = unit_h
+                now_point[1] = 0 
+                now_point[0] += 1
                 continue
-            if position[0] >= h:
+            if position[0] >= w:
                 break
-            if not self.is_in_ppbox(position, masked_img): 
+
+            if not self.is_in_ppbox(position, masked_img):
                 pointed_img = cv2.circle(pointed_img, (position[0], position[1]), 10, [0,255,0], -1)
-                features.append(copy.deepcopy(position))
-            position += np.array([0, unit_w])
-            
+            else: 
+                states[now_point[0] - 1, now_point[1]] = True
+                states[now_point[0] + 1, now_point[1]] = True
+                states[now_point[0], now_point[1] - 1] = True
+                states[now_point[0], now_point[1] + 1] = True
+                states[now_point[0], now_point[1]] = True
+            position += np.array([0, unit_h]) 
+
+        print("features state: ", states)
+        # 求出實際座標
+        for h in feature_shape[1]: 
+            for w in feature_shape[0]: 
+                point = [unit_w * w+1, unit_h * h+1]
+                if states[point[0], point[1]] == True:
+                    pointed_img = cv2.circle(pointed_img, (point[0], point[1]), 10, [255,0,0], -1)
+                    features.append(copy.deepcopy(position))
         cv2.imwrite('features_points.jpg', pointed_img)
         return np.array(features)
+
     # function of Using optical flow calculatoin and get usable features' movment.
     def get_opticalflow_point(self, prev_img, next_img, prev_features, masked_img):
         if prev_img is None:

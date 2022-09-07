@@ -206,7 +206,6 @@ def run(
     prev_img = None
     prev_features = None
     ppbox_mask = None
-    crowd_list = []
     n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
     pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
@@ -396,7 +395,7 @@ def run(
                             edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
                             
                             arrow_prev_time = time.time()
-                            arrow_img, crowd_list = pptrack_handler.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
+                            arrow_img = pptrack_handler.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time
                             total_arrow_time += temp
@@ -434,7 +433,7 @@ def run(
                             result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
                             optflow.draw_optflow(im0, result0, result1)
                         prev_img = im0
-                        prev_features = optflow.get_features(im0, ppbox_mask, (15, 15))
+                        prev_features = optflow.get_features(im0, ppbox_mask, (100, 100))
                         optflow_now_time = time.time()
                         temp = optflow_now_time-optflow_prev_time
                         total_optflow_time += temp
