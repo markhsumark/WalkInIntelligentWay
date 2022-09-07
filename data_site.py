@@ -65,7 +65,6 @@ class PPTrackHandler: #Data_position
     def trans_data2ppdata(self, dis_edge = 200, type = 0):
         start = time.time()
         arrow_record = self.records
-        pdata_per_frame = []
         # for i in range(len(arrow_record)-1):
         frame_start = arrow_record[0]
         frame_end = arrow_record[-1]
@@ -93,10 +92,9 @@ class PPTrackHandler: #Data_position
         
         if type == 0 and len(person_data) > 0:
             person_data = self.compute_nearby(person_data, dis_edge)
-        pdata_per_frame.append(person_data)
         end = time.time()
         print("- Cost ", end - start, "second in trans_data2ppdata.")
-        return pdata_per_frame 
+        return person_data 
             
     def compute_nearby(self, person_data, edge: int):
         print("classify nearby distance: ", edge)
@@ -155,35 +153,32 @@ class PPTrackHandler: #Data_position
         res_crowd_list = []
         
         # 取得每個frame中每個人的data
-        pdata_per_frame = self.trans_data2ppdata(distance_edge)
+        person_data = self.trans_data2ppdata(distance_edge)
+
+        res_crowd_list= self.get_crowd_list(self, person_data)
+
+        largest_crowd = res_crowd_list[0]
+        """
+        # remove duplicated crowd
+        # 去除重複物件的方法: https://minayu.site/2018/12/技術小筆記-利用eq-hash-解決去除重複物件object
+        # compare which crowd is the largest if the crowd 
+        # find the largest crowd to init the arrow thinkness function 
+        """
+        for crowd in set(res_crowd_list):
+            if largest_crowd.size() < crowd.size():
+                largest_crowd = crowd 
+        arrow_thickness_func = ThicknessSigmoid(largest_crowd.size())
         
-        # 取頭尾
-        for pdatas in pdata_per_frame:
-
-            res_crowd_list= self.get_crowd_list(self, pdatas)
-
-            largest_crowd = res_crowd_list[0]
-            """
-            # remove duplicated crowd
-            # 去除重複物件的方法: https://minayu.site/2018/12/技術小筆記-利用eq-hash-解決去除重複物件object
-            # compare which crowd is the largest if the crowd 
-            # find the largest crowd to init the arrow thinkness function 
-            """
-            for crowd in set(res_crowd_list):
-                if largest_crowd.size() < crowd.size():
-                    largest_crowd = crowd 
-            arrow_thickness_func = ThicknessSigmoid(largest_crowd.size())
-            
-            worker_manager = DrawerManager(background, beta = 0.5)        
-            for crowd in set(res_crowd_list):
-                worker_manager.add_work(crowd, color, arrow_thickness_func.execute)
-                # think_fun trans 4 times to transfor argument to ThicknessSigmoid.execute func
-            time1 = time.time()
-            worker_manager.work()
-            time2 = time.time()
-            print("- Cost: ", time2 - time1,"second in drawing")
-            
-            background = worker_manager.img
+        worker_manager = DrawerManager(background, beta = 0.5)        
+        for crowd in set(res_crowd_list):
+            worker_manager.add_work(crowd, color, arrow_thickness_func.execute)
+            # think_fun trans 4 times to transfor argument to ThicknessSigmoid.execute func
+        time1 = time.time()
+        worker_manager.work()
+        time2 = time.time()
+        print("- Cost: ", time2 - time1,"second in drawing")
+        
+        background = worker_manager.img
         return background, set(res_crowd_list)
                 
     

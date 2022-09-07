@@ -206,6 +206,7 @@ def run(
     prev_img = None
     prev_features = None
     ppbox_mask = None
+    crowd_list = []
     n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
     pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
@@ -376,19 +377,6 @@ def run(
             
             
             if ppl_res:
-                if show_optflow:
-                    optflow_prev_time = time.time()
-                    optflow = Optflow()     # set feature density (amount)
-                    ppbox_mask= optflow.get_ppbox_mask(im0, outputs)
-                    if prev_features is not None:
-                        result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
-                        optflow.draw_optflow(im0, result0, result1)
-                    prev_img = im0
-                    prev_features = optflow.get_features(im0, ppbox_mask, (15, 15))
-                    optflow_now_time = time.time()
-                    temp = optflow_now_time-optflow_prev_time
-                    total_optflow_time += temp
-                    print("OpticlaFlow_SINGLE_TIME:", temp)
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
@@ -438,6 +426,19 @@ def run(
                             trace_array.append(temp)
                             print("Trace_SINGLE_TIME:", temp)
                             show("Trace", curve_img)
+                    if show_optflow:
+                        optflow_prev_time = time.time()
+                        optflow = Optflow()     # set feature density (amount)
+                        ppbox_mask= optflow.get_ppbox_mask(im0, outputs)
+                        if prev_features is not None:
+                            result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
+                            optflow.draw_optflow(im0, result0, result1)
+                        prev_img = im0
+                        prev_features = optflow.get_features(im0, ppbox_mask, (15, 15))
+                        optflow_now_time = time.time()
+                        temp = optflow_now_time-optflow_prev_time
+                        total_optflow_time += temp
+                        print("OpticlaFlow_SINGLE_TIME:", temp)
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)
                 print("TOTAL TRACE TIME", total_trace_time)
