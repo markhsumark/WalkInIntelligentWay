@@ -13,15 +13,15 @@ class Optflow:
                                 maxLevel = 2,
                                 criteria = (cv2.TERM_CRITERIA_EPS| cv2.TERM_CRITERIA_COUNT, 10, 0.03))
         
-    # 先把人遮住，之後只需判斷是否為mask就能判斷是否在ppbox內
-    def get_ppbox_mask(self, img, ppbox):  
+    # 先把人遮住，之後只需判斷是否為mask就能判斷是否在ppbox內, O({人數})
+    def get_ppbox_mask(self, img, box_list):  
         img_shape = img.shape
         # 白色背景
         mask = np.zeros((img_shape[0], img_shape[1], 3), dtype=np.int32)
         mask[0:img_shape[0], 0: img_shape[1]] = 255
-        print(len(ppbox[0]))
-        for box in ppbox[0]:
-            start_x, start_y, end_x, end_y = int(box[0]), int(box[1]), int(box[2]), int(box[3])
+        for k in box_list:
+            box = box_list[k]
+            start_x, start_y, end_x, end_y = box[0], box[1], box[2], box[3]
 
             # 在背景蓋上ppbox(指定區域變全黑)
             box_img = np.zeros((end_y - start_y, end_x - start_x, 3), dtype=np.int32)
@@ -36,10 +36,41 @@ class Optflow:
         if np.array_equal(mask[point[1], point[0]], np.array([0, 0, 0])): 
             return True
         return False
-    
+    # O({crowd數}* {crowd大小}* 100})
+    def get_crowds_outer_features_list(self, img, masked_img, crowd_list, box_list:dict): 
+        h, w = img.shape[:2]
+        count = 0
+        crowds_outer_features_list = []
+        # 處理每個人群
+        for crowd in crowd_list:
+            crowd_box = [h, w, 0, 0]
+            # 找出人群的box 外框
+            for ppl_data in crowd: 
+                pid = ppl_data.id
+                ppl_box = box_list[pid]
+                start_x, start_y, end_x, end_y = ppl_box[0], ppl_box[1], ppl_box[2], ppl_box[3]
+                if start_x < crowd_box[0]:
+                    crowd_box[0] = start_x
+                if start_y < crowd_box[1]:
+                    crowd_box[1] = start_y
+                if end_x > crowd_box[2]:
+                    crowd_box[2] = end_x
+                if end_y > crowd_box[3]:
+                    crowd_box[3] = end_y
+            # 取box範圍內的img和masked_img
+            crowd_box_img = img[crowd_box[0]:crowd_box[2], crowd_box[1]:crowd_box[3]]
+            crowd_box_masked_img = masked_img[crowd_box[0]:crowd_box[2], crowd_box[1]:crowd_box[3], :]
+            cv2.imwrite('crowd_box({})'.format(count), crowd_box_img)
+            # 取box範圍內的特徵點
+            crowd_outer_features = self.get_features(crowd_box_img, crowd_box_masked_img)
+            crowds_outer_features_list.append(crowd_outer_features)
+
+            count += 1
+
+        return np.array(crowds_outer_features_list, dtype = np.int32)
     # get all needed points position in given image
-    def get_features(self, img, masked_img, feature_shape = (20, 20)):
-        states = np.zeros(feature_shape, dtype = np.bool)
+    def get_features(self, img, masked_img, feature_shape = (10, 10)):
+        # states = np.zeros(feature_shape, dtype = np.bool)
 
         h, w = img.shape[0:2]
         unit_h = h//feature_shape[0]
@@ -47,39 +78,20 @@ class Optflow:
 
         pointed_img = copy.deepcopy(img)
         features = [] 
-
-        # init start position
-        now_point = np.array([0, 0])
         position = np.array([unit_w, unit_h], dtype=np.int32)
         # 先找出人周圍的點（包含在人的框框內的）
         while True:
             if position[1] >= h:
                 position[0] += unit_w
                 position[1] = unit_h
-                now_point[1] = 0 
-                now_point[0] += 1
                 continue
             if position[0] >= w:
                 break
 
             if not self.is_in_ppbox(position, masked_img):
                 pointed_img = cv2.circle(pointed_img, (position[0], position[1]), 10, [0,255,0], -1)
-            else: 
-                states[now_point[0] - 1, now_point[1]] = True
-                states[now_point[0] + 1, now_point[1]] = True
-                states[now_point[0], now_point[1] - 1] = True
-                states[now_point[0], now_point[1] + 1] = True
-                states[now_point[0], now_point[1]] = True
+                features.append(position)
             position += np.array([0, unit_h]) 
-
-        print("features state: ", states)
-        # 求出實際座標
-        for h in feature_shape[1]: 
-            for w in feature_shape[0]: 
-                point = [unit_w * w+1, unit_h * h+1]
-                if states[point[0], point[1]] == True:
-                    pointed_img = cv2.circle(pointed_img, (point[0], point[1]), 10, [255,0,0], -1)
-                    features.append(copy.deepcopy(position))
         cv2.imwrite('features_points.jpg', pointed_img)
         return np.array(features)
 

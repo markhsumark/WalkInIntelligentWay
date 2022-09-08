@@ -288,6 +288,7 @@ def run(
             if cfg.STRONGSORT.ECC:  # camera motion
                 strongsort_list[i].tracker.camera_update(prev_frames[i], curr_frames[i])
             ppl_res = {}  # ppl_res : all ppl's sites, key: id, val: (x,y)
+            box_list = {} # box_list : all ppl's box, key: id, val: [start_x, start_y, end_x, end_y]
             if det is not None and len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
@@ -317,6 +318,7 @@ def run(
                         cls = output[5]
                         bbox_c = np.array([(output[2] + output[0]) // 2, (output[3] + output[1]) // 2]) # center site (x,y)
                         ppl_res[id] = bbox_c
+                        box_list[id] = bboxes
                         
                         #############################################find min bbox_size###########
                         w = abs(output[2] - output[0])
@@ -388,8 +390,9 @@ def run(
                     #t_heatmap = threading.Thread(target = heatmap(ppl_res, w, h, background))
                     #t_heatmap.start()
                 # show arrow diagram(opencv)
+                pptrack_handler.add_record(ppl_res)
                 if show_arrow or show_trace:   
-                    pptrack_handler.add_record(ppl_res)
+                    
                     if show_arrow:
                         if pptrack_handler.count_frame >= pptrack_handler.frame_max:
                             edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
@@ -406,10 +409,7 @@ def run(
                         if cnt == 0:
                             tmp_h, tmp_w = im0.shape[:2]
                             transparent = np.zeros((tmp_h, tmp_w, 4), dtype = np.uint8)
-                            
-                            #first_img = cv2.cvtColor(first_img, cv2.COLOR_BGR2BGRA)
-                            #first_img[:,:,3] = 1
-                            #print("This is img: ", first_img)
+                        
                             first_img = transparent
                             cnt = 1
                         if pptrack_handler.count_frame >= pptrack_handler.frame_max:
@@ -426,18 +426,25 @@ def run(
                             print("Trace_SINGLE_TIME:", temp)
                             show("Trace", curve_img)
                     if show_optflow:
-                        optflow_prev_time = time.time()
-                        optflow = Optflow()     # set feature density (amount)
-                        ppbox_mask= optflow.get_ppbox_mask(im0, outputs)
-                        if prev_features is not None:
-                            result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
-                            optflow.draw_optflow(im0, result0, result1)
-                        prev_img = im0
-                        prev_features = optflow.get_features(im0, ppbox_mask, (100, 100))
-                        optflow_now_time = time.time()
-                        temp = optflow_now_time-optflow_prev_time
-                        total_optflow_time += temp
-                        print("OpticlaFlow_SINGLE_TIME:", temp)
+                        # optflow_prev_time = time.time()
+                        optflow = Optflow()     
+                        # ppbox_mask= optflow.get_ppbox_mask(im0, box_list)
+                        # if prev_features is not None:
+                        #     result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
+                        #     optflow.draw_optflow(im0, result0, result1)
+                        # prev_img = im0
+                        # prev_features = optflow.get_features(im0, ppbox_mask, (100, 100))
+                        # optflow_now_time = time.time()
+                        # temp = optflow_now_time-optflow_prev_time
+                        # total_optflow_time += temp
+                        # print("OpticlaFlow_SINGLE_TIME:", temp)
+                        pdata = pptrack_handler.trans_data2ppdata()
+                        ppbox_mask= optflow.get_ppbox_mask(im0, box_list)   
+                        
+                        crowd_list= pptrack_handler.get_crowd_list(pdata)
+                        result = optflow.get_crowds_outer_features_list(im0, ppbox_mask, crowd_list, box_list)
+                        print("result shape: ", result.shape)
+                        time.sleep(1)
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)
                 print("TOTAL TRACE TIME", total_trace_time)
