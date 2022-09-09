@@ -438,12 +438,22 @@ def run(
                         # temp = optflow_now_time-optflow_prev_time
                         # total_optflow_time += temp
                         # print("OpticlaFlow_SINGLE_TIME:", temp)
-                        pdata = pptrack_handler.trans_data2ppdata()
+                        
                         ppbox_mask= optflow.get_ppbox_mask(im0, box_list)   
                         
+                        if prev_features is not None:
+                            result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
+                            optflow.draw_optflow(im0, result0, result1)
+                        prev_img = im0 # 紀錄上一張圖
+
+                        # 求出上一張圖的features並記錄
+                        pdata = pptrack_handler.trans_data2ppdata() 
                         crowd_list= pptrack_handler.get_crowd_list(pdata)
                         result = optflow.get_crowds_outer_features_list(im0, ppbox_mask, crowd_list, box_list)
                         print("result shape: ", result.shape)
+                        # 紀錄
+                        prev_features = result.flatten()
+                        
                         time.sleep(1)
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)

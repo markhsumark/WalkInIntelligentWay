@@ -37,7 +37,8 @@ class Optflow:
             return True
         return False
     # O({crowd數}* {crowd大小}* 100})
-    def get_crowds_outer_features_list(self, img, masked_img, crowd_list, box_list:dict): 
+    def get_crowds_outer_features_list(self, im0, masked_img, crowd_list, box_list:dict): 
+        img = copy.deepcopy(im0)
         h, w = img.shape[:2]
         count = 0
         crowds_outer_features_list = []
@@ -66,7 +67,7 @@ class Optflow:
             crowds_outer_features_list.append(crowd_outer_features)
 
             count += 1
-
+        cv2.imwrite('crowds_outer_features_result.jpg', img)
         return np.array(crowds_outer_features_list, dtype = np.int32)
     # get all needed points position in given image
     def get_features(self, img, masked_img, feature_shape = (10, 10)):
@@ -92,7 +93,6 @@ class Optflow:
                 pointed_img = cv2.circle(pointed_img, (position[0], position[1]), 10, [0,255,0], -1)
                 features.append(position)
             position += np.array([0, unit_h]) 
-        cv2.imwrite('features_points.jpg', pointed_img)
         return np.array(features)
 
     # function of Using optical flow calculatoin and get usable features' movment.
@@ -137,7 +137,6 @@ class Optflow:
             line_color = [0, 255, 255]
             # remove the strange line
             if dist(new, old) > limit_vec_dist:
-                # print("(strange)")
                 line_color = [0, 0, 0]
             a,b = new.ravel()
             c,d = old.ravel()
@@ -148,8 +147,7 @@ class Optflow:
             temp_frame = cv2.circle(temp_frame, (c,d), 8, [0,255,0], -1)
             
             # cv2.imwrite('optical_flow.jpg', temp_frame)
-            # time.sleep(0.3)
-        show('optical_flow', temp_frame, showout = True)
+        show('optical_flow', temp_frame, showout = False)
         cv2.imwrite('optical_flow.jpg', temp_frame)    
             
             
