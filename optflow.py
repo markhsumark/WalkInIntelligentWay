@@ -12,15 +12,16 @@ class Optflow:
         self.lk_params = dict(  winSize = (15, 15), 
                                 maxLevel = 2,
                                 criteria = (cv2.TERM_CRITERIA_EPS| cv2.TERM_CRITERIA_COUNT, 10, 0.03))
-        
+    
     # 先把人遮住，之後只需判斷是否為mask就能判斷是否在ppbox內, O({人數})
     def get_ppbox_mask(self, img, box_list):  
         img_shape = img.shape
         # 白色背景
-        mask = np.zeros((img_shape[0], img_shape[1], 3), dtype=np.int32)
+        mask = np.zeros((img_shape[0], img_shape[1], 3), dtype=np.float32)
         mask[0:img_shape[0], 0: img_shape[1]] = 255
         for k in box_list:
             box = box_list[k]
+            box = box.astype(np.int32)
             start_x, start_y, end_x, end_y = box[0], box[1], box[2], box[3]
 
             # 在背景蓋上ppbox(指定區域變全黑)
@@ -44,11 +45,11 @@ class Optflow:
         crowds_outer_features_list = []
         # 處理每個人群
         for crowd in crowd_list:
-            crowd_box = [h, w, 0, 0]
+            crowd_box = [int(h), int(w), 0, 0]
             # 找出人群的box 外框
-            for ppl_data in crowd: 
+            for ppl_data in crowd.people: 
                 pid = ppl_data.id
-                ppl_box = box_list[pid]
+                ppl_box = box_list[pid].astype(np.int32)
                 start_x, start_y, end_x, end_y = ppl_box[0], ppl_box[1], ppl_box[2], ppl_box[3]
                 if start_x < crowd_box[0]:
                     crowd_box[0] = start_x
@@ -58,17 +59,21 @@ class Optflow:
                     crowd_box[2] = end_x
                 if end_y > crowd_box[3]:
                     crowd_box[3] = end_y
+            # 外拓
+            crowd_box += [50, 50, 50, 50]
             # 取box範圍內的img和masked_img
-            crowd_box_img = img[crowd_box[0]:crowd_box[2], crowd_box[1]:crowd_box[3]]
-            crowd_box_masked_img = masked_img[crowd_box[0]:crowd_box[2], crowd_box[1]:crowd_box[3], :]
+            crowd_box_img = img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
+            crowd_box_masked_img = masked_img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
             cv2.imwrite('crowd_box({})'.format(count), crowd_box_img)
-            # 取box範圍內的特徵點
+            
+            # 取box範圍內的特徵點(相對位置)
             crowd_outer_features = self.get_features(crowd_box_img, crowd_box_masked_img)
+            
             crowds_outer_features_list.append(crowd_outer_features)
 
             count += 1
-        cv2.imwrite('crowds_outer_features_result.jpg', img)
-        return np.array(crowds_outer_features_list, dtype = np.int32)
+        # print(crowds_outer_features_list)
+        return crowds_outer_features_list
     # get all needed points position in given image
     def get_features(self, img, masked_img, feature_shape = (10, 10)):
         # states = np.zeros(feature_shape, dtype = np.bool)
@@ -82,6 +87,7 @@ class Optflow:
         position = np.array([unit_w, unit_h], dtype=np.int32)
         # 先找出人周圍的點（包含在人的框框內的）
         while True:
+            print(position)
             if position[1] >= h:
                 position[0] += unit_w
                 position[1] = unit_h
@@ -91,9 +97,10 @@ class Optflow:
 
             if not self.is_in_ppbox(position, masked_img):
                 pointed_img = cv2.circle(pointed_img, (position[0], position[1]), 10, [0,255,0], -1)
-                features.append(position)
+                # cv2.imwrite('test.jpg', pointed_img)
+                features.append(copy.deepcopy(position))
             position += np.array([0, unit_h]) 
-        return np.array(features)
+        return features
 
     # function of Using optical flow calculatoin and get usable features' movment.
     def get_opticalflow_point(self, prev_img, next_img, prev_features, masked_img):

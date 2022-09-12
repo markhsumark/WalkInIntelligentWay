@@ -1,6 +1,7 @@
 
 import argparse
 from glob import glob
+from xml.etree.ElementTree import TreeBuilder
 import globals
 import os
 # limit the number of cpus used by high performance libraries
@@ -394,7 +395,7 @@ def run(
                 if show_arrow or show_trace:   
                     
                     if show_arrow:
-                        if pptrack_handler.count_frame >= pptrack_handler.frame_max:
+                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                             edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
                             
                             arrow_prev_time = time.time()
@@ -404,7 +405,7 @@ def run(
                             total_arrow_time += temp
                             arrow_array.append(temp)
                             print("Arrow_SINGLE_TIME:",temp)
-                            show("Arrow", arrow_img)
+                            show("Arrow", arrow_img, showout = True)
                     if show_trace:
                         if cnt == 0:
                             tmp_h, tmp_w = im0.shape[:2]
@@ -412,7 +413,7 @@ def run(
                         
                             first_img = transparent
                             cnt = 1
-                        if pptrack_handler.count_frame >= pptrack_handler.frame_max:
+                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                             pdata = pptrack_handler.trans_data2ppdata(type = 1)
                             trace_prev_time = time.time()
                             curve_img = pptrack_handler.draw_trace(pdata, first_img)
@@ -438,22 +439,22 @@ def run(
                         # temp = optflow_now_time-optflow_prev_time
                         # total_optflow_time += temp
                         # print("OpticlaFlow_SINGLE_TIME:", temp)
-                        
-                        ppbox_mask= optflow.get_ppbox_mask(im0, box_list)   
-                        
-                        if prev_features is not None:
-                            result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
-                            optflow.draw_optflow(im0, result0, result1)
-                        prev_img = im0 # 紀錄上一張圖
+                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
+                            ppbox_mask= optflow.get_ppbox_mask(im0, box_list)   
+                            print("inininin")
+                            if prev_features is not None:
+                                result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
+                                optflow.draw_optflow(im0, result0, result1)
+                            prev_img = im0 # 紀錄上一張圖
 
-                        # 求出上一張圖的features並記錄
-                        pdata = pptrack_handler.trans_data2ppdata() 
-                        crowd_list= pptrack_handler.get_crowd_list(pdata)
-                        result = optflow.get_crowds_outer_features_list(im0, ppbox_mask, crowd_list, box_list)
-                        print("result shape: ", result.shape)
-                        # 紀錄
-                        prev_features = result.flatten()
-                        
+                            # 求出上一張圖的features並記錄
+                            pdata = pptrack_handler.trans_data2ppdata() 
+                            crowd_list= pptrack_handler.get_crowd_list(pdata[0])
+                            result = optflow.get_crowds_outer_features_list(im0, ppbox_mask, set(crowd_list), box_list)
+                            print("result : {}, crowd: {}".format(len(result), set(crowd_list)))
+                            # 紀錄
+                            prev_features = result.flatten()
+                        print("sleep")
                         time.sleep(1)
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)

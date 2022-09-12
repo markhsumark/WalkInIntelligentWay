@@ -24,7 +24,7 @@ class Data:
             return True
         return False
     def __repr__(self):
-        return 'id:{}, nearby:{}\n'.format(self.id, [n.id for n in self.nearby])
+        return 'id:{}, nearby:{}, vector:{}\n'.format(self.id, [n.id for n in self.nearby], self.vector)
     
     
 class PPTrackHandler: #Data_position
@@ -33,10 +33,10 @@ class PPTrackHandler: #Data_position
         self.pdata_per_frame = []
         self.records = deque()
         self.frame_max = max
-        self.count_frame = 1
     
     def draw_trace(self, curve_frame, im):
         for frame in curve_frame:
+            print(frame)
             for pp_data in frame:
                 id = pp_data.id
                 vector = pp_data.vector
@@ -59,12 +59,11 @@ class PPTrackHandler: #Data_position
         if len(records) > self.frame_max:
             records.popleft()
         
-        self.count_frame += 1
-        
     # if no need to nearby data, set type = 1
     def trans_data2ppdata(self, dis_edge = 200, type = 0):
         start = time.time()
         arrow_record = self.records
+        pdata_per_frame = []
         # for i in range(len(arrow_record)-1):
         frame_start = arrow_record[0]
         frame_end = arrow_record[-1]
@@ -92,9 +91,10 @@ class PPTrackHandler: #Data_position
         
         if type == 0 and len(person_data) > 0:
             person_data = self.compute_nearby(person_data, dis_edge)
+        pdata_per_frame.append(person_data)
         end = time.time()
         print("- Cost ", end - start, "second in trans_data2ppdata.")
-        return person_data 
+        return pdata_per_frame 
             
     def compute_nearby(self, person_data, edge: int):
         print("classify nearby distance: ", edge)
@@ -155,7 +155,9 @@ class PPTrackHandler: #Data_position
         # 取得每個frame中每個人的data
         person_data = self.trans_data2ppdata(distance_edge)
 
-        res_crowd_list= self.get_crowd_list(self, person_data)
+        res_crowd_list= self.get_crowd_list(person_data[0])
+        if res_crowd_list == None:
+            return background
 
         largest_crowd = res_crowd_list[0]
         """
