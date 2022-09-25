@@ -43,7 +43,7 @@ from yolov5.utils.plots import Annotator, colors, save_one_box
 from strong_sort.utils.parser import get_config
 from strong_sort.strong_sort import StrongSORT
 from heatmap import heatmap
-from data_site import PPTrackHandler
+from pptrack_handler import PPTrackHandler
 from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show, BackgroundManager, FlowWorker
 from optflow import Optflow
 #from curve import draw_trace
@@ -440,21 +440,20 @@ def run(
                         # total_optflow_time += temp
                         # print("OpticlaFlow_SINGLE_TIME:", temp)
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
-                            ppbox_mask= optflow.get_ppbox_mask(im0, box_list)   
-                            print("inininin")
+                            ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
                             if prev_features is not None:
                                 result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
                                 optflow.draw_optflow(im0, result0, result1)
+
                             prev_img = im0 # 紀錄上一張圖
 
                             # 求出上一張圖的features並記錄
                             pdata = pptrack_handler.trans_data2ppdata() 
                             crowd_list= pptrack_handler.get_crowd_list(pdata[0])
                             result = optflow.get_crowds_outer_features_list(im0, ppbox_mask, set(crowd_list), box_list)
-                            print("result : {}, crowd: {}".format(len(result), set(crowd_list)))
-                            # 紀錄
+
+                            # 紀錄上一組features
                             prev_features = result.flatten()
-                        print("sleep")
                         time.sleep(1)
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)

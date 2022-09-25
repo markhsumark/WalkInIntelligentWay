@@ -37,12 +37,11 @@ class Optflow:
         if np.array_equal(mask[point[1], point[0]], np.array([0, 0, 0])): 
             return True
         return False
-    # O({crowd數}* {crowd大小}* 100})
+    # O({crowd數}* {crowd大小}* 100})。回傳每個人群的周圍feature
     def get_crowds_outer_features_list(self, im0, masked_img, crowd_list, box_list:dict): 
         img = copy.deepcopy(im0)
         h, w = img.shape[:2]
-        count = 0
-        crowds_outer_features_list = []
+        crowds_outer_features_dict = {}
         # 處理每個人群
         for crowd in crowd_list:
             crowd_box = [int(h), int(w), 0, 0]
@@ -59,21 +58,23 @@ class Optflow:
                     crowd_box[2] = end_x
                 if end_y > crowd_box[3]:
                     crowd_box[3] = end_y
-            # 外拓
+            # 外拓，以方便獲取周圍的feature
             crowd_box += [50, 50, 50, 50]
+
             # 取box範圍內的img和masked_img
             crowd_box_img = img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
             crowd_box_masked_img = masked_img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
-            cv2.imwrite('crowd_box({})'.format(count), crowd_box_img)
+
+            cv2.imwrite('crowd_box({})'.format(crowd.id), crowd_box_img)
             
             # 取box範圍內的特徵點(相對位置)
             crowd_outer_features = self.get_features(crowd_box_img, crowd_box_masked_img)
             
-            crowds_outer_features_list.append(crowd_outer_features)
+            crowds_outer_features_dict[crowd.id] = crowd_outer_features
 
-            count += 1
-        # print(crowds_outer_features_list)
-        return crowds_outer_features_list
+        # print(crowds_outer_features_dict)
+        #key: id, value : features
+        return crowds_outer_features_dict
     # get all needed points position in given image
     def get_features(self, img, masked_img, feature_shape = (10, 10)):
         # states = np.zeros(feature_shape, dtype = np.bool)

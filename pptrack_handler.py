@@ -58,7 +58,6 @@ class PPTrackHandler: #Data_position
         records.append(record)
         if len(records) > self.frame_max:
             records.popleft()
-        
     # if no need to nearby data, set type = 1
     def trans_data2ppdata(self, dis_edge = 200, type = 0):
         start = time.time()
@@ -146,6 +145,13 @@ class PPTrackHandler: #Data_position
         end = time.time()
         print("- Cost ", end - start, "seconds in 'get_crowd_list()' algo.")
             
+        # 去除重複的並加上id
+        res_crowd_list = set(res_crowd_list)
+        count_id = 1
+        for crowd in res_crowd_list:
+            crowd.id = count_id
+            count_id+= 1
+
         return res_crowd_list
     def draw_crowd_arrow(self, background, color, distance_edge = 300):
         background = np.array(background, dtype = np.uint8) 
@@ -158,7 +164,7 @@ class PPTrackHandler: #Data_position
         res_crowd_list= self.get_crowd_list(person_data[0])
         if res_crowd_list == None:
             return background
-
+        
         largest_crowd = res_crowd_list[0]
         """
         # remove duplicated crowd
