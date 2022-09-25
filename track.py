@@ -205,7 +205,7 @@ def run(
     outputs = [None] * nr_sources
     # ---------------------------------------------------------------------------------
     prev_img = None
-    prev_features = None
+    prev_crowd_features = None
     ppbox_mask = None
     n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
     pptrack_handler = PPTrackHandler(n_frame)
@@ -441,9 +441,11 @@ def run(
                         # print("OpticlaFlow_SINGLE_TIME:", temp)
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                             ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
-                            if prev_features is not None:
-                                result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
-                                optflow.draw_optflow(im0, result0, result1)
+                            if prev_crowd_features is not None:
+                                for i in prev_crowd_features:
+                                    crowd_features = prev_crowd_features[i]
+                                    result0, result1 = optflow.get_opticalflow_point(prev_img, im0, crowd_features, ppbox_mask)
+                                    optflow.draw_optflow(im0, result0, result1)
 
                             prev_img = im0 # 紀錄上一張圖
 
@@ -453,7 +455,7 @@ def run(
                             result = optflow.get_crowds_outer_features_list(im0, ppbox_mask, set(crowd_list), box_list)
 
                             # 紀錄上一組features
-                            prev_features = result.flatten()
+                            prev_crowd_features = result.flatten()
                         time.sleep(1)
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)

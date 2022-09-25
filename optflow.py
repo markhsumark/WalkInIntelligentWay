@@ -69,11 +69,17 @@ class Optflow:
             
             # 取box範圍內的特徵點(相對位置)
             crowd_outer_features = self.get_features(crowd_box_img, crowd_box_masked_img)
+
+            # 相對位置->絕對位置
+            for feature in crowd_outer_features:
+                feature += [crowd_box[1], crowd_box[0]]
+                img = cv2.circle(img, (feature[0], feature[1]), 10, [0,255,0], -1)
             
             crowds_outer_features_dict[crowd.id] = crowd_outer_features
 
-        # print(crowds_outer_features_dict)
-        #key: id, value : features
+        cv2.imwrite('crowds_features.jpg', img)
+
+        #key: crowd_id, value : features
         return crowds_outer_features_dict
     # get all needed points position in given image
     def get_features(self, img, masked_img, feature_shape = (10, 10)):
@@ -156,7 +162,6 @@ class Optflow:
             
             # cv2.imwrite('optical_flow.jpg', temp_frame)
         show('optical_flow', temp_frame, showout = False)
-        cv2.imwrite('optical_flow.jpg', temp_frame)    
             
             
         
