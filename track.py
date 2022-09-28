@@ -42,6 +42,7 @@ from yolov5.utils.plots import Annotator, colors, save_one_box
 from strong_sort.utils.parser import get_config
 from strong_sort.strong_sort import StrongSORT
 from heatmap import heatmap
+from geo_fence import geofence
 from data_site import DataSites
 from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show
 #from curve import draw_trace
@@ -136,6 +137,7 @@ def run(
         show_arrow = False,
         show_trace = False,
         show_original = False,
+        use_geofence = True,
         wait = False
 ):
 
@@ -266,6 +268,9 @@ def run(
                 tmp_img = cv2.resize(im0,(920,540), interpolation=cv2.INTER_AREA)
             cv2.imwrite("output.jpg", tmp_img)
             ##############################test stream#######################################
+            print("\n\n",use_geofence,"\n\n")
+            if use_geofence :
+                geofence(tmp_img)
             #cv2.imshow(str(p),im0)
             #break
             ################################################################################
@@ -495,6 +500,7 @@ def parse_opt():
     parser.add_argument('--show-trace', action='store_true', help='show trace')
     parser.add_argument('--show-original', action='store_true', help='show original')
     parser.add_argument('--wait', action='store_true', help='when showing img, waiting for user command to continue')
+    parser.add_argument('--use-geofence', action='store_true',help='use geofence')
 
     
     opt = parser.parse_args()
