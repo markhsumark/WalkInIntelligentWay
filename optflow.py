@@ -16,16 +16,16 @@ class Optflow:
     # 先把人遮住，之後只需判斷是否為mask就能判斷是否在ppbox內, O({人數})
     def get_ppbox_mask(self, img, box_list):  
         img_shape = img.shape
-        # 白色背景
+        # 黑色背景
         mask = np.zeros((img_shape[0], img_shape[1], 3), dtype=np.float32)
-        mask[0:img_shape[0], 0: img_shape[1]] = 255
         for k in box_list:
             box = box_list[k]
             box = box.astype(np.int32)
             start_x, start_y, end_x, end_y = box[0], box[1], box[2], box[3]
 
-            # 在背景蓋上ppbox(指定區域變全黑)
+            # 在背景蓋上ppbox(指定區域變全白)
             box_img = np.zeros((end_y - start_y, end_x - start_x, 3), dtype=np.int32)
+            box_img[0:end_y - start_y, 0:  end_x - start_x] = 255
             mask[start_y:end_y, start_x:end_x] = box_img
         cv2.imwrite('mask.jpg', mask)
         return mask
@@ -34,7 +34,7 @@ class Optflow:
     # check whether in people boxes
     def is_in_ppbox(self, point, mask):
         point = point.astype(np.int32)
-        if np.array_equal(mask[point[1], point[0]], np.array([0, 0, 0])): 
+        if np.array_equal(mask[point[1], point[0]], np.array([255, 255, 255])): 
             return True
         return False
     # O({crowd數}* {crowd大小}* 100})。回傳每個人群的周圍feature
@@ -60,17 +60,18 @@ class Optflow:
                     crowd_box[3] = end_y
             
             # 外拓，以方便獲取周圍的feature
-            crowd_box += np.array([-50, -50, 50, 50])
+            crowd_box += np.array([-10, -10, 10, 10])
 
             # 取box範圍內的img和masked_img
-            crowd_box_img = img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
             crowd_box_masked_img = masked_img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
-
-            # 檢視用
-            cv2.imwrite('crowd_box({}).jpg'.format(crowd.id), crowd_box_img)
             
             # 取box範圍內的特徵點(相對位置)
             crowd_outer_features = self.get_features(crowd_box_masked_img)
+            
+            # 相對位置->絕對位置
+            for feature in crowd_outer_features:
+                feature += [crowd_box[0], crowd_box[1]]
+                img = cv2.circle(img, (feature[0], feature[1]), 10, [0,255,0], -1)
             
             crowds_outer_features_dict[crowd.id] = crowd_outer_features
 
@@ -80,14 +81,22 @@ class Optflow:
         return crowds_outer_features_dict
     # 取人群的輪廓（最多x個點作為特徵)
     def get_features(self, masked_img):
-        x = 5;
+        x = 5
         # 參考來源：https://iter01.com/547012.html
-        ret, binary = cv2.threshold(masked_img, 127, 255, cv2.THRESH_BINARY)
-        _,contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # ret, binary = cv2.threshold(masked_img, 127, 255, cv2.THRESH_BINARY)
+        masked_img = cv2.cvtColor(masked_img, cv2.COLOR_BGR2GRAY)
+        masked_img = np.array(masked_img,np.uint8)
+        contours, hierarchy = cv2.findContours(masked_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        draw_img0 = cv2.drawContours(masked_img.copy(), contours, -1,(0,0,255),3)
         print('contours: ',contours)
-        draw_img0 = cv2.drawContours(masked_img.copy(),contours, -1,(0,255,255),3)
-        cv2.imshow('contours', draw_img0)
-        time.sleep(0.4)
+        contours = np.array(list(contours), dtype = object)
+        print('contours shape: ',contours.shape)
+        show('contours', draw_img0, showout = True)
+        contours_shape = contours.shape
+        print(contours_shape)
+        contours = contours.reshape(contours_shape[0]*contours_shape[1], 2)
+        print('contours: ',contours.shape)
+        return contours
 
 
     # function of Using optical flow calculatoin and get usable features' movment.
