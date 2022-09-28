@@ -58,26 +58,28 @@ class Optflow:
                     crowd_box[2] = end_x
                 if end_y > crowd_box[3]:
                     crowd_box[3] = end_y
+            
             # 外拓，以方便獲取周圍的feature
-            crowd_box += [50, 50, 50, 50]
-
+            # print('crowd_box: ', crowd_box)
+            # crowd_box += np.array([-50, -50, 50, 50])
+            # print('crowd_box: ', crowd_box)
             # 取box範圍內的img和masked_img
             crowd_box_img = img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
             crowd_box_masked_img = masked_img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
 
-            cv2.imwrite('crowd_box({})'.format(crowd.id), crowd_box_img)
+            cv2.imwrite('crowd_box({}).jpg'.format(crowd.id), crowd_box_img)
             
             # 取box範圍內的特徵點(相對位置)
             crowd_outer_features = self.get_features(crowd_box_img, crowd_box_masked_img)
-
+            crowd_outer_features = np.array(crowd_outer_features)
             # 相對位置->絕對位置
             for feature in crowd_outer_features:
-                feature += [crowd_box[1], crowd_box[0]]
+                feature += [crowd_box[0], crowd_box[1]]
                 img = cv2.circle(img, (feature[0], feature[1]), 10, [0,255,0], -1)
             
             crowds_outer_features_dict[crowd.id] = crowd_outer_features
 
-        cv2.imwrite('crowds_features.jpg', img)
+        cv2.imwrite('crowds_all_features.jpg', img)
 
         #key: crowd_id, value : features
         return crowds_outer_features_dict
@@ -94,7 +96,7 @@ class Optflow:
         position = np.array([unit_w, unit_h], dtype=np.int32)
         # 先找出人周圍的點（包含在人的框框內的）
         while True:
-            print(position)
+            # print(position)
             if position[1] >= h:
                 position[0] += unit_w
                 position[1] = unit_h
@@ -104,7 +106,8 @@ class Optflow:
 
             if not self.is_in_ppbox(position, masked_img):
                 pointed_img = cv2.circle(pointed_img, (position[0], position[1]), 10, [0,255,0], -1)
-                # cv2.imwrite('test.jpg', pointed_img)
+                show('pointed_img', pointed_img, showout= True)
+                # time.sleep(0.5)
                 features.append(copy.deepcopy(position))
             position += np.array([0, unit_h]) 
         return features
@@ -161,7 +164,8 @@ class Optflow:
             temp_frame = cv2.circle(temp_frame, (c,d), 8, [0,255,0], -1)
             
             # cv2.imwrite('optical_flow.jpg', temp_frame)
-        show('optical_flow', temp_frame, showout = False)
+        return temp_frame
+        
             
             
         

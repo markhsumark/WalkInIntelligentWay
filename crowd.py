@@ -7,7 +7,7 @@ class Crowd:
         self.delta_x = 0.0
         self.delta_y = 0.0
     def __repr__(self):
-        return '\n---Crowd---\n人數:{}, ids:{}'.format(len(self.people),[pdata.id for pdata in self.people])
+        return '\n---Crowd---\nid, {}, 人數:{}, people:{}'.format(self.id, len(self.people),[pdata.id for pdata in self.people])
     def __hash__(self):
         return hash(self.__repr__())
     def __eq__(self, other):

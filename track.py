@@ -442,20 +442,24 @@ def run(
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                             ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
                             if prev_crowd_features is not None:
-                                for i in prev_crowd_features:
-                                    crowd_features = prev_crowd_features[i]
+                                optflow_output_img = copy.deepcopy(im0)
+                                for id in prev_crowd_features:
+                                    crowd_features = prev_crowd_features[id]
+                                    print('crowd_feature({})\n:{}'.format(id, crowd_features))
+                                    if len(crowd_features) ==0:
+                                        continue
                                     result0, result1 = optflow.get_opticalflow_point(prev_img, im0, crowd_features, ppbox_mask)
-                                    optflow.draw_optflow(im0, result0, result1)
-
+                                    optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
+                                show('optfolw_result', optflow_output_img, showout = True)
                             prev_img = im0 # 紀錄上一張圖
 
                             # 求出上一張圖的features並記錄
                             pdata = pptrack_handler.trans_data2ppdata() 
                             crowd_list= pptrack_handler.get_crowd_list(pdata[0])
+                            print('crowd list: ', crowd_list)
                             result = optflow.get_crowds_outer_features_list(im0, ppbox_mask, set(crowd_list), box_list)
-
                             # 紀錄上一組features
-                            prev_crowd_features = result.flatten()
+                            prev_crowd_features = result
                         time.sleep(1)
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)

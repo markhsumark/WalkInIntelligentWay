@@ -36,7 +36,6 @@ class PPTrackHandler: #Data_position
     
     def draw_trace(self, curve_frame, im):
         for frame in curve_frame:
-            print(frame)
             for pp_data in frame:
                 id = pp_data.id
                 vector = pp_data.vector
@@ -115,35 +114,35 @@ class PPTrackHandler: #Data_position
         # 這段用來找出 附近且走差不多方向 的人
         start = time.time()
         for pp1 in pdatas:
-            # 周圍超過2人 
-            if len(pp1.nearby) <= 1 or int(abs(pp1.vector[0]) + abs(pp1.vector[1])) <= 1:
+            # 周圍超過1人 
+            if len(pp1.nearby) < 1 or int(abs(pp1.vector[0]) + abs(pp1.vector[1])) <= 1:
                 pp1.nearby = []
-            else:
-                new_nearby = [pp1]
-                for near_pp in pp1.nearby:
-                    # 找對應的pid，然後跟據條件合並向量
-                    for pp2 in pdatas:
-                        if pp2.id == near_pp.id:
-                            # print("found")
-                            vector2 =  pp2.vector
-                            vector = pp1.vector
-                            
-                            # if pp2 isn't move or move slow. (ignore unnessesary people data)
-                            if abs(vector2[0]) + abs(vector2[1]) <= 10:
-                                break
-                            elif angle(vector, vector2) <= theta:
-                                new_nearby.append(pp2)
-                            break  
-                pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id - b.id))
+                continue
+            new_nearby = [pp1]
+            for near_pp in pp1.nearby:
+                # 找對應的pid，然後跟據條件合並向量
+                for pp2 in pdatas:
+                    if pp2.id == near_pp.id:
+                        # print("found")
+                        vector2 =  pp2.vector
+                        vector = pp1.vector
+                        
+                        # if pp2 isn't move or move slow. (ignore unnessesary people data)
+                        if abs(vector2[0]) + abs(vector2[1]) <= 10:
+                            break
+                        elif angle(vector, vector2) <= theta:
+                            new_nearby.append(pp2)
+                        break  
+            pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id - b.id))
         for pp1 in pdatas:
-            if len(pp1.nearby) >= 2:
+            if len(pp1.nearby) >= 1:
                 crowd = Crowd(pp1.nearby)
                 res_crowd_list.append(crowd)
         if len(res_crowd_list) == 0:
             print("NO CROWD!!")
             return
         end = time.time()
-        print("- Cost ", end - start, "seconds in 'get_crowd_list()' algo.")
+        # print("- Cost ", end - start, "seconds in 'get_crowd_list()' algo.")
             
         # 去除重複的並加上id
         res_crowd_list = set(res_crowd_list)
@@ -165,7 +164,8 @@ class PPTrackHandler: #Data_position
         if res_crowd_list == None:
             return background
         
-        largest_crowd = res_crowd_list[0]
+        largest_crowd = None
+        tag = False
         """
         # remove duplicated crowd
         # 去除重複物件的方法: https://minayu.site/2018/12/技術小筆記-利用eq-hash-解決去除重複物件object
@@ -173,7 +173,10 @@ class PPTrackHandler: #Data_position
         # find the largest crowd to init the arrow thinkness function 
         """
         for crowd in set(res_crowd_list):
-            if largest_crowd.size() < crowd.size():
+            if tag == False:
+                largest_crowd = crowd 
+                tag = True
+            elif largest_crowd.size() < crowd.size():
                 largest_crowd = crowd 
         arrow_thickness_func = ThicknessSigmoid(largest_crowd.size())
         
@@ -184,7 +187,7 @@ class PPTrackHandler: #Data_position
         time1 = time.time()
         worker_manager.work()
         time2 = time.time()
-        print("- Cost: ", time2 - time1,"second in drawing")
+        # print("- Cost: ", time2 - time1,"second in drawing")
         
         background = worker_manager.img
         return background
