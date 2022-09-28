@@ -60,22 +60,17 @@ class Optflow:
                     crowd_box[3] = end_y
             
             # 外拓，以方便獲取周圍的feature
-            # print('crowd_box: ', crowd_box)
-            # crowd_box += np.array([-50, -50, 50, 50])
-            # print('crowd_box: ', crowd_box)
+            crowd_box += np.array([-50, -50, 50, 50])
+
             # 取box範圍內的img和masked_img
             crowd_box_img = img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
             crowd_box_masked_img = masked_img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
 
+            # 檢視用
             cv2.imwrite('crowd_box({}).jpg'.format(crowd.id), crowd_box_img)
             
             # 取box範圍內的特徵點(相對位置)
-            crowd_outer_features = self.get_features(crowd_box_img, crowd_box_masked_img)
-            crowd_outer_features = np.array(crowd_outer_features)
-            # 相對位置->絕對位置
-            for feature in crowd_outer_features:
-                feature += [crowd_box[0], crowd_box[1]]
-                img = cv2.circle(img, (feature[0], feature[1]), 10, [0,255,0], -1)
+            crowd_outer_features = self.get_features(crowd_box_masked_img)
             
             crowds_outer_features_dict[crowd.id] = crowd_outer_features
 
@@ -83,34 +78,17 @@ class Optflow:
 
         #key: crowd_id, value : features
         return crowds_outer_features_dict
-    # get all needed points position in given image
-    def get_features(self, img, masked_img, feature_shape = (10, 10)):
-        # states = np.zeros(feature_shape, dtype = np.bool)
+    # 取人群的輪廓（最多x個點作為特徵)
+    def get_features(self, masked_img):
+        x = 5;
+        # 參考來源：https://iter01.com/547012.html
+        ret, binary = cv2.threshold(masked_img, 127, 255, cv2.THRESH_BINARY)
+        _,contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        print('contours: ',contours)
+        draw_img0 = cv2.drawContours(masked_img.copy(),contours, -1,(0,255,255),3)
+        cv2.imshow('contours', draw_img0)
+        time.sleep(0.4)
 
-        h, w = img.shape[0:2]
-        unit_h = h//feature_shape[0]
-        unit_w = w//feature_shape[1]
-
-        pointed_img = copy.deepcopy(img)
-        features = [] 
-        position = np.array([unit_w, unit_h], dtype=np.int32)
-        # 先找出人周圍的點（包含在人的框框內的）
-        while True:
-            # print(position)
-            if position[1] >= h:
-                position[0] += unit_w
-                position[1] = unit_h
-                continue
-            if position[0] >= w:
-                break
-
-            if not self.is_in_ppbox(position, masked_img):
-                pointed_img = cv2.circle(pointed_img, (position[0], position[1]), 10, [0,255,0], -1)
-                show('pointed_img', pointed_img, showout= True)
-                # time.sleep(0.5)
-                features.append(copy.deepcopy(position))
-            position += np.array([0, unit_h]) 
-        return features
 
     # function of Using optical flow calculatoin and get usable features' movment.
     def get_opticalflow_point(self, prev_img, next_img, prev_features, masked_img):
