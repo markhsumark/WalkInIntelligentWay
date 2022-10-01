@@ -13,6 +13,7 @@ import subprocess as sp
 import ctypes
 import inspect
 import globals
+from io import BytesIO
 
 app = Flask(__name__)
 source = ""
@@ -20,6 +21,15 @@ t = threading.Thread(target = track.start_stream, args = (source,))
 #t = multiprocessing.Process(target = track.start_stream, args = (source,))
 terminate_t = True
 #camera = cv2.VideoCapture(0)
+def resize_img_2_bytes(image, resize_factor, quality):
+    bytes_io = BytesIO()
+    img = Image.fromarray(image)
+
+    w, h = img.size
+    img.thumbnail((int(w * resize_factor), int(h * resize_factor)))
+    img.save(bytes_io, 'jpeg', quality=quality)
+    
+    return bytes_io.getvalue()
 
 def legal_url(url):
     try:
