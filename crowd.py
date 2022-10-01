@@ -1,13 +1,10 @@
 from pptracking_util import dist, Arrow
 import numpy as np
 class Crowd:
-    def __init__(self, people, id = None):
-        self.id = id
+    def __init__(self, people,):
         self.people = tuple(people)
-        self.delta_x = 0.0
-        self.delta_y = 0.0
     def __repr__(self):
-        return '\n---Crowd---\nid, {}, 人數:{}, people:{}'.format(self.id, len(self.people),[pdata.id for pdata in self.people])
+        return '\n---Crowd---\n人數:{}, ids:{}'.format(len(self.people),[pdata.id for pdata in self.people])
     def __hash__(self):
         return hash(self.__repr__())
     def __eq__(self, other):
