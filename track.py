@@ -427,18 +427,9 @@ def run(
                             print("Trace_SINGLE_TIME:", temp)
                             show("Trace", curve_img)
                     if show_optflow:
-                        # optflow_prev_time = time.time()
+                        optflow_prev_time = time.time()
                         optflow = Optflow()     
-                        # ppbox_mask= optflow.get_ppbox_mask(im0, box_list)
-                        # if prev_features is not None:
-                        #     result0, result1 = optflow.get_opticalflow_point(prev_img, im0, prev_features, ppbox_mask)
-                        #     optflow.draw_optflow(im0, result0, result1)
-                        # prev_img = im0
-                        # prev_features = optflow.get_features(im0, ppbox_mask, (100, 100))
-                        # optflow_now_time = time.time()
-                        # temp = optflow_now_time-optflow_prev_time
-                        # total_optflow_time += temp
-                        # print("OpticlaFlow_SINGLE_TIME:", temp)
+
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                             ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
                             if prev_crowd_features is not None:
@@ -456,14 +447,18 @@ def run(
                             # 求出上一張圖的features並記錄
                             pdata = pptrack_handler.trans_data2ppdata() 
                             crowd_list= pptrack_handler.get_crowd_list(pdata[0])
-                            print('crowd list: ', crowd_list)
                             result = optflow.get_crowds_outer_features_list(im0, ppbox_mask, set(crowd_list), box_list)
                             # 紀錄上一組features
                             prev_crowd_features = result
-                        time.sleep(1)
+                            
+                        optflow_now_time = time.time()
+                        temp = optflow_now_time - optflow_prev_time
+                        total_optflow_time += temp
+                        print("OPTFLOW_SINGLE_TIME:", temp)
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)
                 print("TOTAL TRACE TIME", total_trace_time)
+                print("TOTAL OPTFLOW TIME", total_optflow_time)
                     
                     
                 
