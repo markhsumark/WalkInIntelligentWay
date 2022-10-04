@@ -444,11 +444,14 @@ def run(
 
                             # 求出上一張圖的features並記錄
                             pdata = pptrack_handler.trans_data2ppdata() 
-                            print("pdata[0]: ", pdata[0])
                             result = optflow.get_people_outer_features_list(im0, ppbox_mask, pdata[0], box_list)
                             # 紀錄上一組features
                             prev_features = result
-                        time.sleep(1)
+                            
+                        optflow_now_time = time.time()   
+                        temp = optflow_now_time - optflow_prev_time 
+                        total_optflow_time += temp
+                        print("Optflow_SINGLE_TIME: ", temp)
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)
                 print("TOTAL TRACE TIME", total_trace_time)
