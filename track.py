@@ -205,7 +205,7 @@ def run(
     outputs = [None] * nr_sources
     # ---------------------------------------------------------------------------------
     prev_img = None
-    prev_crowd_features = None
+    prev_features = None
     ppbox_mask = None
     n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
     pptrack_handler = PPTrackHandler(n_frame)
@@ -432,29 +432,23 @@ def run(
 
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                             ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
-                            if prev_crowd_features is not None:
+                            if prev_features is not None:
                                 optflow_output_img = copy.deepcopy(im0)
-                                for id in prev_crowd_features:
-                                    crowd_features = prev_crowd_features[id]
-                                    print('crowd_feature({})\n:{}'.format(id, crowd_features))
-                                    if len(crowd_features) ==0:
-                                        continue
-                                    result0, result1 = optflow.get_opticalflow_point(prev_img, im0, crowd_features, ppbox_mask)
-                                    optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
+                                for id in prev_features:
+                                    features = prev_features[id]
+                                    if len(features) !=0:
+                                        result0, result1 = optflow.get_opticalflow_point(prev_img, im0, features, ppbox_mask)
+                                        optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
                                 show('optfolw_result', optflow_output_img, showout = True)
                             prev_img = im0 # 紀錄上一張圖
 
                             # 求出上一張圖的features並記錄
                             pdata = pptrack_handler.trans_data2ppdata() 
-                            crowd_list= pptrack_handler.get_crowd_list(pdata[0])
-                            result = optflow.get_crowds_outer_features_list(im0, ppbox_mask, set(crowd_list), box_list)
+                            print("pdata[0]: ", pdata[0])
+                            result = optflow.get_people_outer_features_list(im0, ppbox_mask, pdata[0], box_list)
                             # 紀錄上一組features
-                            prev_crowd_features = result
-                            
-                        optflow_now_time = time.time()
-                        temp = optflow_now_time - optflow_prev_time
-                        total_optflow_time += temp
-                        print("OPTFLOW_SINGLE_TIME:", temp)
+                            prev_features = result
+                        time.sleep(1)
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)
                 print("TOTAL TRACE TIME", total_trace_time)
