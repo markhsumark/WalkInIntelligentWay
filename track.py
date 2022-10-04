@@ -208,6 +208,7 @@ def run(
     prev_features = None
     ppbox_mask = None
     n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
+    optflow_result = dict()
     pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
     first_img = []
@@ -438,8 +439,15 @@ def run(
                                     features = prev_features[id]
                                     if len(features) !=0:
                                         result0, result1 = optflow.get_opticalflow_point(prev_img, im0, features, ppbox_mask)
+                                        
+                                        # 存下結果
+                                        optflow_result = optflow_result[id] = {"start": result0, "end": result1}
+                                        
                                         optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
-                                show('optfolw_result', optflow_output_img, showout = True)
+                                show('optfolw_result', optflow_output_img, showout = False)
+                                
+                                # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
+                                print("optflow_result: ", optflow_result)
                             prev_img = im0 # 紀錄上一張圖
 
                             # 求出上一張圖的features並記錄
