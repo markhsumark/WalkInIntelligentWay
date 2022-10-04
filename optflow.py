@@ -61,9 +61,7 @@ class Optflow:
             # 相對位置->絕對位置
             for feature in person_outer_features:
                 feature += [ppl_box[0], ppl_box[1]]
-                print("feature: ", feature)
                 img = cv2.circle(img, (feature[0], feature[1]), 10, [0,255,0], -1)
-                cv2.imwrite('crowds_all_features.jpg', img)
             
             people_outer_features_dict[pp.id] = person_outer_features
 
@@ -80,17 +78,16 @@ class Optflow:
         masked_img = np.array(masked_img,np.uint8)
         contours, hierarchy = cv2.findContours(masked_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         draw_img0 = cv2.drawContours(masked_img.copy(), contours, -1,(0,0,255),3)
-        show('contours', draw_img0, showout = True)
         
         contours = np.array(list(contours), dtype = object)
         
+        #trans. data structure to [ [ point coordination ], [ ], ...]
         res = np.empty(shape= (1,2), dtype=np.int64)
         for c in contours:
             c = c.reshape(c.shape[0]*c.shape[1], 2)
             res = np.concatenate((res, c))
         res = res[1:]
-        print("res: ", res)
-        time.sleep(3)
+        
         return res
 
 
