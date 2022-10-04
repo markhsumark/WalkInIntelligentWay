@@ -38,49 +38,39 @@ class Optflow:
             return True
         return False
     # O({crowd數}* {crowd大小}* 100})。回傳每個人群的周圍feature
-    def get_crowds_outer_features_list(self, im0, masked_img, crowd_list, box_list:dict): 
+    def get_people_outer_features_list(self, im0, masked_img, ppdata_list, box_list:dict): 
         img = copy.deepcopy(im0)
         h, w = img.shape[:2]
-        crowds_outer_features_dict = {}
+        people_outer_features_dict = {}
         # 處理每個人群
-        for crowd in crowd_list:
-            crowd_box = [int(h), int(w), 0, 0]
-            # 找出人群的box 外框
-            for ppl_data in crowd.people: 
-                pid = ppl_data.id
-                ppl_box = box_list[pid].astype(np.int32)
-                start_x, start_y, end_x, end_y = ppl_box[0], ppl_box[1], ppl_box[2], ppl_box[3]
-                if start_x < crowd_box[0]:
-                    crowd_box[0] = start_x
-                if start_y < crowd_box[1]:
-                    crowd_box[1] = start_y
-                if end_x > crowd_box[2]:
-                    crowd_box[2] = end_x
-                if end_y > crowd_box[3]:
-                    crowd_box[3] = end_y
+        for pp in ppdata_list:
+            ppl_box = [int(h), int(w), 0, 0]
+            # 找出人的box 外框
+            pid = pp.id
+            ppl_box = box_list[pid].astype(np.int32)
             
             # 外拓，以方便獲取周圍的feature
-            crowd_box += np.array([-10, -10, 10, 10])
+            ppl_box += np.array([-10, -10, 10, 10])
 
             # 取box範圍內的img和masked_img
-            crowd_box_masked_img = masked_img[crowd_box[1]:crowd_box[3], crowd_box[0]:crowd_box[2], :]
+            person_box_masked_img = masked_img[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
             
             # 取box範圍內的特徵點(相對位置)
-            crowd_outer_features = self.get_features(crowd_box_masked_img)
+            person_outer_features = self.get_features(person_box_masked_img)
             
             # 相對位置->絕對位置
-            for feature in crowd_outer_features:
-                feature += [crowd_box[0], crowd_box[1]]
+            for feature in person_outer_features:
+                feature += [ppl_box[0], ppl_box[1]]
                 print("feature: ", feature)
                 img = cv2.circle(img, (feature[0], feature[1]), 10, [0,255,0], -1)
                 cv2.imwrite('crowds_all_features.jpg', img)
             
-            crowds_outer_features_dict[crowd.id] = crowd_outer_features
+            people_outer_features_dict[pp.id] = person_outer_features
 
-        cv2.imwrite('crowds_all_features.jpg', img)
+        cv2.imwrite('person"s_all_features.jpg', img)
 
         #key: crowd_id, value : features
-        return crowds_outer_features_dict
+        return people_outer_features_dict
     # 取人群的輪廓（最多x個點作為特徵)
     def get_features(self, masked_img):
         x = 5
