@@ -380,54 +380,7 @@ def run(
             
             
             if ppl_res:
-                if show_heatmap: 
-                    h, w = im0.shape[0:2]
-                    heatmap_prev_time = time.time()
-                    heatmap(frame_idx, ppl_res, w, h)
-                    heatmap_now_time = time.time()
-                    temp = heatmap_now_time-heatmap_prev_time
-                    total_heatmap_time += temp
-                    heatmap_array.append(temp)
-                    print("Heatmap_SINGLE_TIME:", temp)
-                    #t_heatmap = threading.Thread(target = heatmap(ppl_res, w, h, background))
-                    #t_heatmap.start()
-                # show arrow diagram(opencv)
-                pptrack_handler.add_record(ppl_res)
-                if show_arrow or show_trace:   
-                    
-                    if show_arrow:
-                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
-                            edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
-                            
-                            arrow_prev_time = time.time()
-                            arrow_img = pptrack_handler.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
-                            arrow_now_time = time.time()
-                            temp = arrow_now_time-arrow_prev_time
-                            total_arrow_time += temp
-                            arrow_array.append(temp)
-                            print("Arrow_SINGLE_TIME:",temp)
-                            show("Arrow", arrow_img, showout = True)
-                    if show_trace:
-                        if cnt == 0:
-                            tmp_h, tmp_w = im0.shape[:2]
-                            transparent = np.zeros((tmp_h, tmp_w, 4), dtype = np.uint8)
-                        
-                            first_img = transparent
-                            cnt = 1
-                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
-                            pdata = pptrack_handler.trans_data2ppdata(type = 1)
-                            trace_prev_time = time.time()
-                            curve_img = pptrack_handler.draw_trace(pdata, first_img)
-                            background = cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)
-                            #print(curve_img.shape, background.shape)
-                            curve_img = cv2.addWeighted(curve_img, 1, background, 1, 0)
-                            trace_now_time = time.time()
-                            temp = trace_now_time-trace_prev_time
-                            total_trace_time += temp
-                            trace_array.append(temp)
-                            print("Trace_SINGLE_TIME:", temp)
-                            show("Trace", curve_img)
-                    if show_optflow:
+                if show_optflow:
                         optflow_prev_time = time.time()
                         optflow = Optflow()     
 
@@ -460,6 +413,59 @@ def run(
                         temp = optflow_now_time - optflow_prev_time 
                         total_optflow_time += temp
                         print("Optflow_SINGLE_TIME: ", temp)
+                if show_heatmap: 
+                    h, w = im0.shape[0:2]
+                    heatmap_prev_time = time.time()
+                    heatmap(frame_idx, ppl_res, w, h)
+                    heatmap_now_time = time.time()
+                    temp = heatmap_now_time-heatmap_prev_time
+                    total_heatmap_time += temp
+                    heatmap_array.append(temp)
+                    print("Heatmap_SINGLE_TIME:", temp)
+                    #t_heatmap = threading.Thread(target = heatmap(ppl_res, w, h, background))
+                    #t_heatmap.start()
+                # show arrow diagram(opencv)
+                pptrack_handler.add_record(ppl_res)
+                if show_arrow or show_trace:   
+                    
+                    if show_arrow:
+                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
+                            edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
+                            
+                            arrow_prev_time = time.time()
+                            person_data = pptrack_handler.trans_data2ppdata(edge)
+                            # 利用optflow結果影響person_data的vector
+                            person_data = pptrack_handler.affect_by_optflow(person_data, optflow_result)
+
+                            res_crowd_list= pptrack_handler.get_crowd_list(person_data[0])
+                            arrow_img = pptrack_handler.draw_crowd_arrow(background, res_crowd_list,  color = COLOR_CLOSE)
+                            arrow_now_time = time.time()
+                            temp = arrow_now_time-arrow_prev_time
+                            total_arrow_time += temp
+                            arrow_array.append(temp)
+                            print("Arrow_SINGLE_TIME:",temp)
+                            show("Arrow", arrow_img, showout = True)
+                    if show_trace:
+                        if cnt == 0:
+                            tmp_h, tmp_w = im0.shape[:2]
+                            transparent = np.zeros((tmp_h, tmp_w, 4), dtype = np.uint8)
+                        
+                            first_img = transparent
+                            cnt = 1
+                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
+                            pdata = pptrack_handler.trans_data2ppdata(type = 1)
+                            trace_prev_time = time.time()
+                            curve_img = pptrack_handler.draw_trace(pdata, first_img)
+                            background = cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)
+                            #print(curve_img.shape, background.shape)
+                            curve_img = cv2.addWeighted(curve_img, 1, background, 1, 0)
+                            trace_now_time = time.time()
+                            temp = trace_now_time-trace_prev_time
+                            total_trace_time += temp
+                            trace_array.append(temp)
+                            print("Trace_SINGLE_TIME:", temp)
+                            show("Trace", curve_img)
+                    
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)
                 print("TOTAL TRACE TIME", total_trace_time)

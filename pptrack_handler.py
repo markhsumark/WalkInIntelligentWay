@@ -152,16 +152,12 @@ class PPTrackHandler: #Data_position
             count_id+= 1
 
         return res_crowd_list
-    def draw_crowd_arrow(self, background, color, distance_edge = 300):
+    def draw_crowd_arrow(self, background, crowd_list, color):
         background = np.array(background, dtype = np.uint8) 
         
-        res_crowd_list = []
-        
         # 取得每個frame中每個人的data
-        person_data = self.trans_data2ppdata(distance_edge)
-
-        res_crowd_list= self.get_crowd_list(person_data[0])
-        if res_crowd_list == None:
+        
+        if crowd_list == None:
             return background
         
         largest_crowd = None
@@ -172,7 +168,7 @@ class PPTrackHandler: #Data_position
         # compare which crowd is the largest if the crowd 
         # find the largest crowd to init the arrow thinkness function 
         """
-        for crowd in set(res_crowd_list):
+        for crowd in set(crowd_list):
             if tag == False:
                 largest_crowd = crowd 
                 tag = True
@@ -181,7 +177,7 @@ class PPTrackHandler: #Data_position
         arrow_thickness_func = ThicknessSigmoid(largest_crowd.size())
         
         worker_manager = DrawerManager(background, beta = 0.5)        
-        for crowd in set(res_crowd_list):
+        for crowd in set(crowd_list):
             worker_manager.add_work(crowd, color, arrow_thickness_func.execute)
             # think_fun trans 4 times to transfor argument to ThicknessSigmoid.execute func
         time1 = time.time()
@@ -195,3 +191,57 @@ class PPTrackHandler: #Data_position
     
 
         #cv2.circle(影像, 圓心座標, 半徑, 顏色, 線條寬度)
+    def affect_by_optflow(self, person_data, optflow_result): 
+        for pdata, opt_res_id in zip(person_data, optflow_result):
+            optdata = optflow_result[opt_res_id]
+            
+            #取opt res的平均位移量
+            start_p_list = optdata['start']
+            end_p_list = optdata['end']
+
+            total_vector = 0
+
+            vec_list = []
+
+            # test
+            print("start_p_list: ", start_p_list)
+            print("end_p_list: ", end_p_list)
+            vector_list = start_p_list - end_p_list
+            print("vector_list: ", vector_list)
+
+            for point0, point1 in zip(start_p_list, end_p_list):
+                if type(point0) is not np.ndarray: 
+                    point0 = np.array(point0)
+                if type(point1) is not np.ndarray: 
+                    point1 = np.array(point1)
+
+                temp_vec = point1 - point0
+                vec_list = vec_list.append(temp_vec)
+
+            # 移除不同的
+            # scope_count = np.zeros(8)
+            # for vec in vec_list:
+            #     angle = angle(vec, [1, 0])
+            #     scope = angle/45
+            #     scope_count[scope]+= 1
+            #...未完成
+
+            for vec in vec_list:
+                total_vector += vec
+            avg_vector = total_vector/len(vec_list)
+
+            pdata.vector -= avg_vector
+            
+        return person_data
+
+
+
+
+
+            
+                
+            
+
+
+
+
