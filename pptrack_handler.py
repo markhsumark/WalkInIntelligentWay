@@ -202,24 +202,13 @@ class PPTrackHandler: #Data_position
 
             total_vector = 0
 
-            vec_list = []
+            # vec_list = []
 
             # test
-            print("start_p_list: ", start_p_list)
-            print("end_p_list: ", end_p_list)
-            vector_list = start_p_list - end_p_list
-            print("vector_list: ", vector_list) 
-            for point0, point1 in zip(start_p_list, end_p_list):
-                if type(point0) is not np.ndarray: 
-                    point0 = np.array(point0)
-                if type(point1) is not np.ndarray: 
-                    point1 = np.array(point1)
+            vec_list = end_p_list - start_p_list
 
-                temp_vec = point1 - point0
-                vec_list.append(temp_vec)
-
-            # 移除不同的
-            # scope_count = np.zeros(8)
+            # 移除不合理的向量
+            # scope_count = np.zeros(8) # 八個方向
             # for vec in vec_list:
             #     angle = angle(vec, [1, 0])
             #     scope = angle/45
@@ -229,7 +218,6 @@ class PPTrackHandler: #Data_position
                 for vec in vec_list:
                     total_vector += vec
                 avg_vector = total_vector/len(vec_list)
-
                 pdata.vector -= avg_vector
             
         return person_data

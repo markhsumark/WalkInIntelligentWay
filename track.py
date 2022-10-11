@@ -413,7 +413,6 @@ def run(
                         temp = optflow_now_time - optflow_prev_time 
                         total_optflow_time += temp
                         print("Optflow_SINGLE_TIME: ", temp)
-                print("optflowresult: ", optflow_result)
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
