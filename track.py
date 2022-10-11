@@ -1,6 +1,7 @@
 
 import argparse
 from glob import glob
+from xml.etree.ElementTree import TreeBuilder
 import globals
 import os
 # limit the number of cpus used by high performance libraries
@@ -42,8 +43,9 @@ from yolov5.utils.plots import Annotator, colors, save_one_box
 from strong_sort.utils.parser import get_config
 from strong_sort.strong_sort import StrongSORT
 from heatmap import heatmap
-from data_site import DataSites
-from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show
+from pptrack_handler import PPTrackHandler
+from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show, BackgroundManager, FlowWorker
+from optflow import Optflow
 #from curve import draw_trace
 import copy
 import matplotlib.pyplot as plt
@@ -83,6 +85,7 @@ def video_command():
     parser.add_argument('--show-arrow', action='store_true', default=True,help='show arrow')
     parser.add_argument('--show-trace', action='store_true', default=True ,help='show trace')
     parser.add_argument('--show-original', action='store_true',help='show original')
+    parser.add_argument('--show-optflow', action='store_true',help='show optflow')
     parser.add_argument('--wait', action='store_true', help='when showing img, waiting for user command to continue')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
@@ -92,6 +95,7 @@ opt = video_command()
 total_heatmap_time = 0
 total_trace_time = 0
 total_arrow_time = 0
+total_optflow_time = 0
 n_of_people = 0
 people_nums_array = []
 heatmap_array = []
@@ -136,6 +140,7 @@ def run(
         show_arrow = False,
         show_trace = False,
         show_original = False,
+        show_optflow = False,
         wait = False
 ):
 
@@ -199,8 +204,13 @@ def run(
         )
     outputs = [None] * nr_sources
     # ---------------------------------------------------------------------------------
-    n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
-    data_site = DataSites(n_frame)
+    prev_img = None
+    prev_features = None
+    ppbox_mask = None
+    n_frame = 3 # 決定一次要分析幾個frame , n_frame must>= 2
+    optflow_result = dict()
+    pptrack_handler = PPTrackHandler(n_frame)
+    b_manager = BackgroundManager()
     first_img = []
     cnt = 0
     min_size = []
@@ -272,11 +282,15 @@ def run(
             txt_path = str(save_dir / 'tracks' / txt_file_name)  # im.txt
             s += '%gx%g ' % im.shape[2:]  # print string
             imc = im0.copy() if save_crop else im0  # for save_crop
+
             background = copy.deepcopy(im0)
+            b_manager.refresh(background)
+
             annotator = Annotator(im0, line_width=2, pil=not ascii)
             if cfg.STRONGSORT.ECC:  # camera motion
                 strongsort_list[i].tracker.camera_update(prev_frames[i], curr_frames[i])
             ppl_res = {}  # ppl_res : all ppl's sites, key: id, val: (x,y)
+            box_list = {} # box_list : all ppl's box, key: id, val: [start_x, start_y, end_x, end_y]
             if det is not None and len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
@@ -306,6 +320,7 @@ def run(
                         cls = output[5]
                         bbox_c = np.array([(output[2] + output[0]) // 2, (output[3] + output[1]) // 2]) # center site (x,y)
                         ppl_res[id] = bbox_c
+                        box_list[id] = bboxes
                         
                         #############################################find min bbox_size###########
                         w = abs(output[2] - output[0])
@@ -345,27 +360,59 @@ def run(
                 yolo_array.append(t3-t2)
                 strongsort_array.append(t5-t4)
                 LOGGER.info(f'{s}Done. YOLO:({t3 - t2:.3f}s), StrongSORT:({t5 - t4:.3f}s)')
-                # print(ppl_res)
 
             else:
                 strongsort_list[i].increment_ages()
                 LOGGER.info('No detections')
-            # def thread_arrow():
-            #      arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = 800)
-            #      show("Arrow", arrow_img , wait = arrow_wait)
-            # def thread_trace(pdata, first_img):
-            #     curve_img = draw_trace(pdata, first_img)
-            #     show("Curve", curve_img, wait = trace_wait)
-                
-            # show heatmap (matplotlib)
+
+            
             global total_heatmap_time
             global total_arrow_time
             global total_trace_time
+            global total_optflow_time
             globals.n_of_people = len(ppl_res)
             print("People count: ", len(ppl_res))
+            
             people_nums_array.append(len(ppl_res))
             
+            
+           
+            
+            pptrack_handler.add_record(ppl_res)
             if ppl_res:
+                if show_optflow:
+                        optflow_prev_time = time.time()
+                        optflow = Optflow()     
+
+                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
+                            ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
+                            if prev_features is not None:
+                                optflow_output_img = copy.deepcopy(im0)
+                                for id in prev_features:
+                                    features = prev_features[id]
+                                    if len(features) !=0:
+                                        result0, result1 = optflow.get_opticalflow_point(prev_img, im0, features, ppbox_mask)
+                                        
+                                        # 存下結果
+                                        optflow_result[id] = {"start": result0, "end": result1}
+                                        
+                                        optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
+                                show('optfolw_result', optflow_output_img, showout = False)
+                                
+                                # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
+                                print("optflow_result: ", optflow_result)
+                            prev_img = im0 # 紀錄上一張圖
+
+                            # 求出上一張圖的features並記錄
+                            pdata = pptrack_handler.trans_data2ppdata() 
+                            result = optflow.get_people_outer_features_list(im0, ppbox_mask, pdata[0], box_list)
+                            # 紀錄上一組features
+                            prev_features = result
+                            
+                        optflow_now_time = time.time()   
+                        temp = optflow_now_time - optflow_prev_time 
+                        total_optflow_time += temp
+                        print("Optflow_SINGLE_TIME: ", temp)
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
@@ -379,33 +426,35 @@ def run(
                     #t_heatmap.start()
                 # show arrow diagram(opencv)
                 if show_arrow or show_trace:   
-                    data_site.add_record(ppl_res)
+                    
                     if show_arrow:
-                        if data_site.count_frame >= data_site.frame_max:
+                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                             edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
                             
                             arrow_prev_time = time.time()
-                            arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
+                            person_data = pptrack_handler.trans_data2ppdata(edge)
+                            # 利用optflow結果影響person_data的vector
+                            person_data = pptrack_handler.affect_by_optflow(person_data[0], optflow_result)
+
+                            res_crowd_list= pptrack_handler.get_crowd_list(person_data)
+                            arrow_img = pptrack_handler.draw_crowd_arrow(background, res_crowd_list,  color = COLOR_CLOSE)
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time
                             total_arrow_time += temp
                             arrow_array.append(temp)
                             print("Arrow_SINGLE_TIME:",temp)
-                            show("Arrow", arrow_img)
+                            show("Arrow", arrow_img, showout = True)
                     if show_trace:
                         if cnt == 0:
                             tmp_h, tmp_w = im0.shape[:2]
                             transparent = np.zeros((tmp_h, tmp_w, 4), dtype = np.uint8)
-                            
-                            #first_img = cv2.cvtColor(first_img, cv2.COLOR_BGR2BGRA)
-                            #first_img[:,:,3] = 1
-                            #print("This is img: ", first_img)
+                        
                             first_img = transparent
                             cnt = 1
-                        if data_site.count_frame >= data_site.frame_max:
-                            pdata = data_site.trans_data2ppdata(type = 1)
+                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
+                            pdata = pptrack_handler.trans_data2ppdata(type = 1)
                             trace_prev_time = time.time()
-                            curve_img = data_site.draw_trace(pdata, first_img)
+                            curve_img = pptrack_handler.draw_trace(pdata, first_img)
                             background = cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)
                             #print(curve_img.shape, background.shape)
                             curve_img = cv2.addWeighted(curve_img, 1, background, 1, 0)
@@ -415,9 +464,11 @@ def run(
                             trace_array.append(temp)
                             print("Trace_SINGLE_TIME:", temp)
                             show("Trace", curve_img)
+                    
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)
                 print("TOTAL TRACE TIME", total_trace_time)
+                print("TOTAL OPTFLOW TIME", total_optflow_time)
                     
                     
                 
@@ -511,6 +562,7 @@ def main(opt):
     time_start = time.time()
     run(**vars(opt))
     time_end = time.time()
+    print("TOTAL OPTICAL FLOW TIME:", total_optflow_time)
     print("TOTAL HEATMAP TIME:", total_heatmap_time)
     print("TOTAL ARROW TIME:", total_arrow_time)
     print("TOTAL TRACE TIME", total_trace_time)
