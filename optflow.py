@@ -44,10 +44,11 @@ class Optflow:
         people_outer_features_dict = {}
         # 處理每個人群
         for pp in ppdata_list:
+            
             ppl_box = [int(h), int(w), 0, 0]
             # 找出人的box 外框
             pid = pp.id
-            ppl_box = box_list[pid].astype(np.int32)
+            ppl_box = np.array(box_list[pid]).astype(np.int32)
             
             # 外拓，以方便獲取周圍的feature
             ppl_box += np.array([-10, -10, 10, 10])

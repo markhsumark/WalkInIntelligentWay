@@ -207,7 +207,7 @@ def run(
     prev_img = None
     prev_features = None
     ppbox_mask = None
-    n_frame = 2 # 決定一次要分析幾個frame , n_frame must>= 2
+    n_frame = 3 # 決定一次要分析幾個frame , n_frame must>= 2
     optflow_result = dict()
     pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
@@ -378,7 +378,7 @@ def run(
             
            
             
-            
+            pptrack_handler.add_record(ppl_res)
             if ppl_res:
                 if show_optflow:
                         optflow_prev_time = time.time()
@@ -394,7 +394,7 @@ def run(
                                         result0, result1 = optflow.get_opticalflow_point(prev_img, im0, features, ppbox_mask)
                                         
                                         # 存下結果
-                                        optflow_result = optflow_result[id] = {"start": result0, "end": result1}
+                                        optflow_result[id] = {"start": result0, "end": result1}
                                         
                                         optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
                                 show('optfolw_result', optflow_output_img, showout = False)
@@ -413,6 +413,7 @@ def run(
                         temp = optflow_now_time - optflow_prev_time 
                         total_optflow_time += temp
                         print("Optflow_SINGLE_TIME: ", temp)
+                print("optflowresult: ", optflow_result)
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
@@ -425,7 +426,6 @@ def run(
                     #t_heatmap = threading.Thread(target = heatmap(ppl_res, w, h, background))
                     #t_heatmap.start()
                 # show arrow diagram(opencv)
-                pptrack_handler.add_record(ppl_res)
                 if show_arrow or show_trace:   
                     
                     if show_arrow:
@@ -435,9 +435,9 @@ def run(
                             arrow_prev_time = time.time()
                             person_data = pptrack_handler.trans_data2ppdata(edge)
                             # 利用optflow結果影響person_data的vector
-                            person_data = pptrack_handler.affect_by_optflow(person_data, optflow_result)
+                            person_data = pptrack_handler.affect_by_optflow(person_data[0], optflow_result)
 
-                            res_crowd_list= pptrack_handler.get_crowd_list(person_data[0])
+                            res_crowd_list= pptrack_handler.get_crowd_list(person_data)
                             arrow_img = pptrack_handler.draw_crowd_arrow(background, res_crowd_list,  color = COLOR_CLOSE)
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time

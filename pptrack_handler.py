@@ -192,9 +192,10 @@ class PPTrackHandler: #Data_position
 
         #cv2.circle(影像, 圓心座標, 半徑, 顏色, 線條寬度)
     def affect_by_optflow(self, person_data, optflow_result): 
+        
         for pdata, opt_res_id in zip(person_data, optflow_result):
             optdata = optflow_result[opt_res_id]
-            
+
             #取opt res的平均位移量
             start_p_list = optdata['start']
             end_p_list = optdata['end']
@@ -207,8 +208,7 @@ class PPTrackHandler: #Data_position
             print("start_p_list: ", start_p_list)
             print("end_p_list: ", end_p_list)
             vector_list = start_p_list - end_p_list
-            print("vector_list: ", vector_list)
-
+            print("vector_list: ", vector_list) 
             for point0, point1 in zip(start_p_list, end_p_list):
                 if type(point0) is not np.ndarray: 
                     point0 = np.array(point0)
@@ -216,7 +216,7 @@ class PPTrackHandler: #Data_position
                     point1 = np.array(point1)
 
                 temp_vec = point1 - point0
-                vec_list = vec_list.append(temp_vec)
+                vec_list.append(temp_vec)
 
             # 移除不同的
             # scope_count = np.zeros(8)
@@ -225,12 +225,12 @@ class PPTrackHandler: #Data_position
             #     scope = angle/45
             #     scope_count[scope]+= 1
             #...未完成
+            if len(vec_list)!= 0:
+                for vec in vec_list:
+                    total_vector += vec
+                avg_vector = total_vector/len(vec_list)
 
-            for vec in vec_list:
-                total_vector += vec
-            avg_vector = total_vector/len(vec_list)
-
-            pdata.vector -= avg_vector
+                pdata.vector -= avg_vector
             
         return person_data
 
