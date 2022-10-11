@@ -432,9 +432,10 @@ def run(
                             edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
                             
                             arrow_prev_time = time.time()
-                            person_data = pptrack_handler.trans_data2ppdata(edge)
+                            person_data = pptrack_handler.trans_data2ppdata(edge)[0]
                             # 利用optflow結果影響person_data的vector
-                            person_data = pptrack_handler.affect_by_optflow(person_data[0], optflow_result)
+                            if show_optflow:
+                                person_data = pptrack_handler.affect_by_optflow(person_data, optflow_result)
 
                             res_crowd_list= pptrack_handler.get_crowd_list(person_data)
                             arrow_img = pptrack_handler.draw_crowd_arrow(background, res_crowd_list,  color = COLOR_CLOSE)
