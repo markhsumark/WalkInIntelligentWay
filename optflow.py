@@ -49,13 +49,15 @@ class Optflow:
             # 找出人的box 外框
             pid = pp.id
             ppl_box = np.array(box_list[pid]).astype(np.int32)
-            
+            print(ppl_box)
             # 外拓，以方便獲取周圍的feature
             ppl_box += np.array([-10, -10, 10, 10])
-
+            # 避免<0的位置
+            for i in range(4):
+                if ppl_box[i] < 0 :
+                    ppl_box[i] = 0
             # 取box範圍內的img和masked_img
             person_box_masked_img = masked_img[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
-            
             # 取box範圍內的特徵點(相對位置)
             person_outer_features = self.get_features(person_box_masked_img)
             
