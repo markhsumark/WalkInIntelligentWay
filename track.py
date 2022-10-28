@@ -207,7 +207,7 @@ def run(
     prev_img = None
     prev_features = None
     ppbox_mask = None
-    n_frame = 3 # 決定一次要分析幾個frame , n_frame must>= 2
+    n_frame = 5 # 決定一次要分析幾個frame , n_frame must>= 2
     optflow_result = dict()
     pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
@@ -221,12 +221,12 @@ def run(
     dt, seen = [0.0, 0.0, 0.0, 0.0], 0
     curr_frames, prev_frames = [None] * nr_sources, [None] * nr_sources
     
-    frame_count_cc = 0
+    
     for frame_idx, (path, im, im0s, vid_cap, s) in enumerate(dataset):
         if globals.kill_t == True:
             print("STOP ANALYZING!!")
             break
-        frame_count_cc += 1
+        globals.frame_count_cc += 1
         # if frame_count_cc >= 300:
         #     break
         t1 = time_sync()
@@ -274,6 +274,7 @@ def run(
             tmp_img = copy.deepcopy(im0)
             if im0.shape[0] >1000 or im0.shape[1]>1000:
                 tmp_img = cv2.resize(im0,(920,540), interpolation=cv2.INTER_AREA)
+            # cv2.imwrite("result/output"+str(globals.frame_count_cc)+".jpg", tmp_img)
             cv2.imwrite("output.jpg", tmp_img)
             ##############################test stream#######################################
             #cv2.imshow(str(p),im0)
@@ -383,7 +384,7 @@ def run(
                 if show_optflow:
                         optflow_prev_time = time.time()
                         optflow = Optflow()     
-
+                        # if globals.frame_count_cc%pptrack_handler.frame_max == 0:
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                             ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
                             if prev_features is not None:
@@ -428,8 +429,9 @@ def run(
                 if show_arrow or show_trace:   
                     
                     if show_arrow:
+                        # if globals.frame_count_cc%pptrack_handler.frame_max == 0:
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
-                            edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
+                            edge = int((background.shape[1] + background.shape[0]/2.0)/6.0)
                             
                             arrow_prev_time = time.time()
                             person_data = pptrack_handler.trans_data2ppdata(edge)[0]
@@ -452,6 +454,7 @@ def run(
                         
                             first_img = transparent
                             cnt = 1
+                        # if globals.frame_count_cc%pptrack_handler.frame_max == 0:
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                             pdata = pptrack_handler.trans_data2ppdata(type = 1)
                             trace_prev_time = time.time()

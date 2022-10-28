@@ -213,6 +213,8 @@ class PPTrackHandler: #Data_position
             #     angle = angle(vec, [1, 0])
             #     scope = angle/45
             #     scope_count[scope]+= 1
+            # for i in range(8):
+                
             #...未完成
             if len(vec_list)!= 0:
                 for vec in vec_list:

@@ -14,9 +14,10 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import (TextArea, DrawingArea, OffsetImage,
                                   AnnotationBbox)
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+import globals
   
 def heatmap(frame_idx,ppl_res, width, height):
-    if frame_idx %3 == 0:
+    if frame_idx % 5 == 0 : #決定一次要分析幾個frame , n_frame must>= 2
         # goal: put the orig frame under the heatmap
         # DEFINE GRID SIZE AND RADIUS(h)
         grid_size = (width + height) // 200
@@ -96,6 +97,7 @@ def heatmap(frame_idx,ppl_res, width, height):
         plt.axis([0, width, 0, height])  
         plt.plot(x,y,'ro')
         plt.savefig('output_heatmap.jpg')
+        # plt.savefig('result/output_heatmap'+str(globals.frame_count_cc) +'.jpg')
         #fig = plt.figure()
         #print("fig  : ", type(fig), "\n")
         #-----------------------------------------cv2 to pil---blend  

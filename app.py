@@ -18,7 +18,6 @@ app = Flask(__name__)
 source = ""
 t = threading.Thread(target = track.start_stream, args = (source,))
 #t = multiprocessing.Process(target = track.start_stream, args = (source,))
-terminate_t = True
 #camera = cv2.VideoCapture(0)
 
 def legal_url(url):

@@ -3,7 +3,6 @@ import numpy as np
 import threading
 from yolov5.utils.general import (cv2)
 import copy
-import time
 from pptracking_util import dist, show
 from collections import deque
 
@@ -27,7 +26,7 @@ class Optflow:
             box_img = np.zeros((end_y - start_y, end_x - start_x, 3), dtype=np.int32)
             box_img[0:end_y - start_y, 0:  end_x - start_x] = 255
             mask[start_y:end_y, start_x:end_x] = box_img
-        cv2.imwrite('mask.jpg', mask)
+        # cv2.imwrite('mask.jpg', mask)
         return mask
         
     
@@ -49,7 +48,6 @@ class Optflow:
             # 找出人的box 外框
             pid = pp.id
             ppl_box = np.array(box_list[pid]).astype(np.int32)
-            print(ppl_box)
             # 外拓，以方便獲取周圍的feature
             ppl_box += np.array([-10, -10, 10, 10])
             # 避免<0的位置
@@ -64,6 +62,7 @@ class Optflow:
             # 相對位置->絕對位置
             for feature in person_outer_features:
                 feature += [ppl_box[0], ppl_box[1]]
+                
                 img = cv2.circle(img, (feature[0], feature[1]), 10, [0,255,0], -1)
             
             people_outer_features_dict[pp.id] = person_outer_features
@@ -74,13 +73,12 @@ class Optflow:
         return people_outer_features_dict
     # 取人群的輪廓（最多x個點作為特徵)
     def get_features(self, masked_img):
-        x = 5
         # 參考來源：https://iter01.com/547012.html
         # ret, binary = cv2.threshold(masked_img, 127, 255, cv2.THRESH_BINARY)
         masked_img = cv2.cvtColor(masked_img, cv2.COLOR_BGR2GRAY)
         masked_img = np.array(masked_img,np.uint8)
         contours, hierarchy = cv2.findContours(masked_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        draw_img0 = cv2.drawContours(masked_img.copy(), contours, -1,(0,0,255),3)
+        # draw_img0 = cv2.drawContours(masked_img.copy(), contours, -1,(0,0,255),3)
         
         contours = np.array(list(contours), dtype = object)
         
