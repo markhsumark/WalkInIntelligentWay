@@ -19,6 +19,7 @@ from pathlib import Path
 import torch
 import torch.backends.cudnn as cudnn
 import pptracking_util as p_util
+from flow_direction import FlowDirection
 
 
 FILE = Path(__file__).resolve()
@@ -430,23 +431,18 @@ def run(
                 if show_arrow or show_trace:   
                     
                     if show_arrow:
-                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
-                            edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
+                        Flow = FlowDirection()
+                        if len(pptrack_handler.records) >= Flow.frame_max:
                             
                             arrow_prev_time = time.time()
-                            person_data = pptrack_handler.trans_data2ppdata(edge)[0]
                             # 利用optflow結果影響person_data的vector
-                            if show_optflow:
-                                person_data = pptrack_handler.affect_by_optflow(person_data, optflow_result)
+                            Flow.exec_flow_direction()
 
-                            res_crowd_list= pptrack_handler.get_crowd_list(person_data)
-                            arrow_img = pptrack_handler.draw_crowd_arrow(background, res_crowd_list,  color = COLOR_CLOSE)
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time
                             total_arrow_time += temp
                             arrow_array.append(temp)
                             print("Arrow_SINGLE_TIME:",temp)
-                            show("Arrow", arrow_img, showout = True)
                     if show_trace:
                         if cnt == 0:
                             tmp_h, tmp_w = im0.shape[:2]
@@ -455,7 +451,7 @@ def run(
                             first_img = transparent
                             cnt = 1
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
-                            pdata = pptrack_handler.trans_data2ppdata(type = 1)
+                            pdata = pptrack_handler.trans_data2ppdata()
                             trace_prev_time = time.time()
                             curve_img = pptrack_handler.draw_trace(pdata, first_img)
                             background = cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)
@@ -526,7 +522,6 @@ def main(opt):
     print("TOTAL ARROW TIME:", total_arrow_time)
     print("TOTAL TRACE TIME", total_trace_time)
     print("TOTAL TIME:" + format(time_end-time_start))
-    
     
     p_util.write_all_results(yolo_array, strongsort_array, heatmap_array, arrow_array, trace_array, people_nums_array)
 
