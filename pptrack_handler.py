@@ -95,7 +95,7 @@ class PPTrackHandler: #Data_position
         return pdata_per_frame 
             
         #cv2.circle(影像, 圓心座標, 半徑, 顏色, 線條寬度)
-def affect_by_optflow(self, person_data, optflow_result): 
+def affect_by_optflow(person_data, optflow_result): 
     
     for pdata, opt_res_id in zip(person_data, optflow_result):
         optdata = optflow_result[opt_res_id]
