@@ -3,13 +3,15 @@ from turtle import back
 import numpy as np
 import math
 from math import sqrt
-from yolov5.utils.general import (cv2)
+# from yolov5.utils.general import (cv2)
+import cv2
 import os
 import threading
 import copy
 import time
 import globals
 
+import csv
 
 class ThicknessSigmoid:
     # 控制箭頭粗細的數學式
@@ -216,3 +218,52 @@ class FlowWorker(threading.Thread):
 
 
         
+def write_result(path, data_header, data, people_nums_array, write_header = True):
+    with open(path, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        if write_header:
+            writer.writerow(data_header)
+        for i in range(len(data)):
+            writer.writerow([data[i], people_nums_array[i]])
+
+def write_all_results(yolo_array, strongsort_array, heatmap_array, arrow_array, trace_array, people_nums_array): 
+    yolo_path = 'yolo_result.csv'
+    yolo_headers = ['yolo_time', 'people']
+    strongsort_path = 'strongsort_result.csv'
+    strongsort_headers = ['strongsort_time', 'people']
+    heatmap_path = 'heatmap_result.csv'
+    heatmap_headers = ['heatmap_time', 'people']
+    arrow_path = 'arrow_result.csv'
+    arrow_headers = ['arrow_time', 'people']
+    trace_path = 'flow_result.csv'
+    trace_headers = ['flow_time', 'people']
+    write_result(
+        path = yolo_path,
+        data_header = yolo_headers,
+        data = yolo_array, 
+        people_nums_array = people_nums_array
+    )
+    write_result(
+        path = strongsort_path,
+        data_header = strongsort_headers,
+        data = strongsort_array, 
+        people_nums_array = people_nums_array
+    )
+    write_result(
+        path = heatmap_path,
+        data_header = heatmap_headers,
+        data = heatmap_array, 
+        people_nums_array = people_nums_array
+    )
+    write_result(
+        path = arrow_path,
+        data_header = arrow_headers,
+        data = arrow_array, 
+        people_nums_array = people_nums_array
+    )
+    write_result(
+        path = trace_path,
+        data_header = trace_headers,
+        data = trace_array, 
+        people_nums_array = people_nums_array
+    )

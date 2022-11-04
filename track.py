@@ -18,6 +18,9 @@ import numpy as np
 from pathlib import Path
 import torch
 import torch.backends.cudnn as cudnn
+import pptracking_util as p_util
+from flow_direction import FlowDirection
+
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # yolov5 strongsort root directory
@@ -103,6 +106,7 @@ trace_array = []
 arrow_array = []
 yolo_array = []
 strongsort_array = []
+
 
 # remove duplicated stream handler to avoid duplicated logging
 logging.getLogger().removeHandler(logging.getLogger().handlers[0])
@@ -382,33 +386,33 @@ def run(
             pptrack_handler.add_record(ppl_res)
             if ppl_res:
                 if show_optflow:
-                        optflow_prev_time = time.time()
-                        optflow = Optflow()     
-                        # if globals.frame_count_cc%pptrack_handler.frame_max == 0:
-                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
-                            ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
-                            if prev_features is not None:
-                                optflow_output_img = copy.deepcopy(im0)
-                                for id in prev_features:
-                                    features = prev_features[id]
-                                    if len(features) !=0:
-                                        result0, result1 = optflow.get_opticalflow_point(prev_img, im0, features, ppbox_mask)
-                                        
-                                        # 存下結果
-                                        optflow_result[id] = {"start": result0, "end": result1}
-                                        
-                                        optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
-                                show('optfolw_result', optflow_output_img, showout = False)
-                                
-                                # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
-                                print("optflow_result: ", optflow_result)
-                            prev_img = im0 # 紀錄上一張圖
+                    optflow_prev_time = time.time()
+                    optflow = Optflow()     
+                    # if globals.frame_count_cc%pptrack_handler.frame_max == 0:
+                    if len(pptrack_handler.records) >= pptrack_handler.frame_max:
+                        ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
+                        if prev_features is not None:
+                            optflow_output_img = copy.deepcopy(im0)
+                            for id in prev_features:
+                                features = prev_features[id]
+                                if len(features) !=0:
+                                    result0, result1 = optflow.get_opticalflow_point(prev_img, im0, features, ppbox_mask)
+                                    
+                                    # 存下結果
+                                    optflow_result[id] = {"start": result0, "end": result1}
+                                    
+                                    optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
+                            show('optfolw_result', optflow_output_img, showout = False)
+                            
+                            # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
+                            print("optflow_result: ", optflow_result)
+                        prev_img = im0 # 紀錄上一張圖
 
-                            # 求出上一張圖的features並記錄
-                            pdata = pptrack_handler.trans_data2ppdata() 
-                            result = optflow.get_people_outer_features_list(im0, ppbox_mask, pdata[0], box_list)
-                            # 紀錄上一組features
-                            prev_features = result
+                        # 求出上一張圖的features並記錄
+                        pdata = pptrack_handler.trans_data2ppdata() 
+                        result = optflow.get_people_outer_features_list(im0, ppbox_mask, pdata[0], box_list)
+                        # 紀錄上一組features
+                        prev_features = result
                             
                         optflow_now_time = time.time()   
                         temp = optflow_now_time - optflow_prev_time 
@@ -423,30 +427,24 @@ def run(
                     total_heatmap_time += temp
                     heatmap_array.append(temp)
                     print("Heatmap_SINGLE_TIME:", temp)
-                    #t_heatmap = threading.Thread(target = heatmap(ppl_res, w, h, background))
-                    #t_heatmap.start()
+
                 # show arrow diagram(opencv)
                 if show_arrow or show_trace:   
                     
                     if show_arrow:
-                        # if globals.frame_count_cc%pptrack_handler.frame_max == 0:
-                        if len(pptrack_handler.records) >= pptrack_handler.frame_max:
-                            edge = int((background.shape[1] + background.shape[0]/2.0)/6.0)
+                        Flow = FlowDirection()
+                        if  globals.frame_count_cc% Flow.frame_max == 0:
                             
                             arrow_prev_time = time.time()
-                            person_data = pptrack_handler.trans_data2ppdata(edge)[0]
                             # 利用optflow結果影響person_data的vector
-                            if show_optflow:
-                                person_data = pptrack_handler.affect_by_optflow(person_data, optflow_result)
+                            pdata = pptrack_handler.trans_data2ppdata()
+                            Flow.exec_flow_direction(pdata[0],  background, optflow_result)
 
-                            res_crowd_list= pptrack_handler.get_crowd_list(person_data)
-                            arrow_img = pptrack_handler.draw_crowd_arrow(background, res_crowd_list,  color = COLOR_CLOSE)
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time
                             total_arrow_time += temp
                             arrow_array.append(temp)
                             print("Arrow_SINGLE_TIME:",temp)
-                            show("Arrow", arrow_img, showout = True)
                     if show_trace:
                         if cnt == 0:
                             tmp_h, tmp_w = im0.shape[:2]
@@ -456,7 +454,7 @@ def run(
                             cnt = 1
                         # if globals.frame_count_cc%pptrack_handler.frame_max == 0:
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
-                            pdata = pptrack_handler.trans_data2ppdata(type = 1)
+                            pdata = pptrack_handler.trans_data2ppdata()
                             trace_prev_time = time.time()
                             curve_img = pptrack_handler.draw_trace(pdata, first_img)
                             background = cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)
@@ -514,50 +512,6 @@ def run(
         strip_optimizer(yolo_weights)  # update model (to fix SourceChangeWarning)
 
 
-def parse_opt():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--yolo-weights', nargs='+', type=str, default=WEIGHTS / 'yolov5m.pt', help='model.pt path(s)')
-    parser.add_argument('--strong-sort-weights', type=str, default=WEIGHTS / 'osnet_x0_25_msmt17.pt')
-    parser.add_argument('--config-strongsort', type=str, default='strong_sort/configs/strong_sort.yaml')
-    parser.add_argument('--source', type=str, default='0', help='file/dir/URL/glob, 0 for webcam')  
-    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
-    parser.add_argument('--conf-thres', type=float, default=0.5, help='confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.5, help='NMS IoU threshold')
-    parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--show-box', action='store_true', help='display tracking video results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
-    parser.add_argument('--save-crop', action='store_true', help='save cropped prediction boxes')
-    parser.add_argument('--save-vid', action='store_true', help='save video tracking results')
-    parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
-    # class 0 is person, 1 is bycicle, 2 is car... 79 is oven
-    parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --classes 0, or --classes 0 2 3')
-    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-    parser.add_argument('--augment', action='store_true', help='augmented inference')
-    parser.add_argument('--visualize', action='store_true', help='visualize features')
-    parser.add_argument('--update', action='store_true', help='update all models')
-    parser.add_argument('--project', default=ROOT / 'runs/track', help='save results to project/name')
-    parser.add_argument('--name', help='save results to project/name')
-    parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-    parser.add_argument('--line-thickness', default=3, type=int, help='bounding box thickness (pixels)')
-    parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
-    parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
-    parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
-    parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
-    parser.add_argument('--show-heatmap', action='store_true', help='show heatmap')
-    parser.add_argument('--show-arrow', action='store_true', help='show arrow')
-    parser.add_argument('--show-trace', action='store_true', help='show trace')
-    parser.add_argument('--show-original', action='store_true', help='show original')
-    parser.add_argument('--wait', action='store_true', help='when showing img, waiting for user command to continue')
-
-    
-    opt = parser.parse_args()
-    opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
-    print_args(vars(opt))
-    return opt
-
-
 def main(opt):
     global total_heatmap_time
     global total_arrow_time
@@ -571,42 +525,8 @@ def main(opt):
     print("TOTAL ARROW TIME:", total_arrow_time)
     print("TOTAL TRACE TIME", total_trace_time)
     print("TOTAL TIME:" + format(time_end-time_start))
-    # yolo_path = 'yolo_result.csv'
-    # yolo_headers = ['yolo_time', 'people']
-    # strongsort_path = 'strongsort_result.csv'
-    # strongsort_headers = ['strongsort_time', 'people']
-    # heatmap_path = 'heatmap_result.csv'
-    # heatmap_headers = ['heatmap_time', 'people']
-    # arrow_path = 'arrow_result.csv'
-    # arrow_headers = ['arrow_time', 'people']
-    # flow_path = 'flow_result.csv'
-    # flow_headers = ['flow_time', 'people']
-    # with open(yolo_path, 'a', newline='') as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     #writer.writerow(yolo_headers)
-    #     for i in range(len(yolo_array)):
-    #         writer.writerow([yolo_array[i], people_nums_array[i]])
-    # with open(strongsort_path, 'a', newline='') as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     #writer.writerow(strongsort_headers)
-    #     for i in range(len(strongsort_array)):
-    #         writer.writerow([strongsort_array[i], people_nums_array[i]])
-    # with open(heatmap_path, 'a', newline='') as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     #writer.writerow(heatmap_headers)
-    #     for i in range(len(heatmap_array)):
-    #         writer.writerow([heatmap_array[i], people_nums_array[i]])
-    # with open(arrow_path, 'a', newline='') as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     #writer.writerow(arrow_headers)
-    #     for i in range(len(arrow_array)):
-    #         writer.writerow([arrow_array[i], people_nums_array[i]])
-    # with open(flow_path, 'a', newline='') as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     #writer.writerow(flow_headers)
-    #     for i in range(len(trace_array)):
-    #         writer.writerow([trace_array[i], people_nums_array[i]])
-#opt = argparse.ArgumentParser().parse_args()
+    
+    p_util.write_all_results(yolo_array, strongsort_array, heatmap_array, arrow_array, trace_array, people_nums_array)
 
 
 def start_stream(source):

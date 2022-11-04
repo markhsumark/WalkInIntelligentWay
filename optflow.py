@@ -115,7 +115,7 @@ class Optflow:
             if point1[1] >= masked_img.shape[0] or point1[0] >= masked_img.shape[1]:
                 print("out of mask's bound")
             # 若光流法的結果在"圖片內"，則判斷是否不再ppbox內
-            elif s != 1 or self.is_in_ppbox(point1, masked_img):
+            elif s != 1:
                 continue
             all_usable_prev_feature.append(point0)
             all_usable_result.append(point1)
