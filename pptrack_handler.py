@@ -8,7 +8,8 @@ from scipy.spatial.distance import cdist
 from collections import deque
 from functools import cmp_to_key
 import copy
-from yolov5.utils.general import (cv2)
+# from yolov5.utils.general import (cv2)
+import cv2
 import numpy as np
 import time
 

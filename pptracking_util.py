@@ -3,7 +3,8 @@ from turtle import back
 import numpy as np
 import math
 from math import sqrt
-from yolov5.utils.general import (cv2)
+# from yolov5.utils.general import (cv2)
+import cv2
 import os
 import threading
 import copy

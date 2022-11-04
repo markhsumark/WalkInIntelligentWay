@@ -225,12 +225,11 @@ def run(
     dt, seen = [0.0, 0.0, 0.0, 0.0], 0
     curr_frames, prev_frames = [None] * nr_sources, [None] * nr_sources
     
-    frame_count_cc = 0
     for frame_idx, (path, im, im0s, vid_cap, s) in enumerate(dataset):
         if globals.kill_t == True:
             print("STOP ANALYZING!!")
             break
-        frame_count_cc += 1
+        globals.frame_count_cc += 1
         # if frame_count_cc >= 300:
         #     break
         t1 = time_sync()
@@ -432,11 +431,12 @@ def run(
                     
                     if show_arrow:
                         Flow = FlowDirection()
-                        if len(pptrack_handler.records) >= Flow.frame_max:
+                        if  globals.frame_count_cc% Flow.frame_max == 0:
                             
                             arrow_prev_time = time.time()
                             # 利用optflow結果影響person_data的vector
-                            Flow.exec_flow_direction()
+                            pdata = pptrack_handler.trans_data2ppdata()
+                            Flow.exec_flow_direction(pdata[0],  background, optflow_result)
 
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time
