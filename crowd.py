@@ -27,6 +27,8 @@ class Crowd:
             sum_of_xy = sum_of_xy + pp.xy
             sum_of_vector = sum_of_vector + pp.vector
         start_center_xy = np.array(sum_of_xy / len(people), dtype=np.int)
+        if dist(sum_of_vector) <= 2:
+            return None
         res_vector = np.array(sum_of_vector, dtype = np.int)
         # thickfun : 用人數去取得箭頭的粗細
         thickness = thick_fun(len(people))
