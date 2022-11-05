@@ -8,8 +8,7 @@ from functools import cmp_to_key
 
 class FlowDirection:
     def __init__(self):
-        self.frame_max = 3
-    
+        None
     def exec_flow_direction(self, person_data, background, optflow_result ):
         edge = int((background.shape[1] + background.shape[0]/2.0)/5.0)
         if len(person_data) == 0:

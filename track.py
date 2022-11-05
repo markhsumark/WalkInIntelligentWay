@@ -211,7 +211,7 @@ def run(
     prev_img = None
     prev_features = None
     ppbox_mask = None
-    n_frame = 5 # 決定一次要分析幾個frame , n_frame must>= 2
+    n_frame = 3 # 決定一次要分析幾個frame , n_frame must>= 2
     optflow_result = dict()
     pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
@@ -388,8 +388,8 @@ def run(
                 if show_optflow:
                     optflow_prev_time = time.time()
                     optflow = Optflow()     
-                    # if globals.frame_count_cc%pptrack_handler.frame_max == 0:
-                    if len(pptrack_handler.records) >= pptrack_handler.frame_max:
+                    if globals.frame_count_cc%pptrack_handler.frame_max == 0:
+                    # if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                         ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
                         if prev_features is not None:
                             optflow_output_img = copy.deepcopy(im0)
@@ -400,12 +400,13 @@ def run(
                                     
                                     # 存下結果
                                     optflow_result[id] = {"start": result0, "end": result1}
-                                    
+                                      
+
                                     optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
-                            show('optfolw_result', optflow_output_img, showout = False)
+                            show('optfolw_result', optflow_output_img, showout = True)
                             
                             # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
-                            print("optflow_result: ", optflow_result)
+                            # print("optflow_result: ", optflow_result)
                         prev_img = im0 # 紀錄上一張圖
 
                         # 求出上一張圖的features並記錄
@@ -433,7 +434,7 @@ def run(
                     
                     if show_arrow:
                         Flow = FlowDirection()
-                        if  globals.frame_count_cc% Flow.frame_max == 0:
+                        if  globals.frame_count_cc% pptrack_handler.frame_max == 0:
                             
                             arrow_prev_time = time.time()
                             # 利用optflow結果影響person_data的vector

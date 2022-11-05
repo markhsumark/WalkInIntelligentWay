@@ -125,36 +125,9 @@ def affect_by_optflow(person_data, optflow_result):
             avg_vector = total_vector/len(vec_list)
             pdata.vector -= avg_vector
         
-        for pdata, opt_res_id in zip(person_data, optflow_result):
-            optdata = optflow_result[opt_res_id]
-
-            #取opt res的平均位移量
-            start_p_list = optdata['start']
-            end_p_list = optdata['end']
-
-            total_vector = 0
-
-            # vec_list = []
-
-            # test
-            vec_list = end_p_list - start_p_list
-
-            # 移除不合理的向量
-            # scope_count = np.zeros(8) # 八個方向
-            # for vec in vec_list:
-            #     angle = angle(vec, [1, 0])
-            #     scope = angle/45
-            #     scope_count[scope]+= 1
-            # for i in range(8):
-                
-            #...未完成
-            if len(vec_list)!= 0:
-                for vec in vec_list:
-                    total_vector += vec
-                avg_vector = total_vector/len(vec_list)
-                pdata.vector -= avg_vector
+        
             
-        return person_data
+    return person_data
 
 
 
