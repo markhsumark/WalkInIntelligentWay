@@ -3,7 +3,7 @@ import numpy as np
 import threading
 from yolov5.utils.general import (cv2)
 import copy
-from pptracking_util import dist, show
+from pptracking_util import dist, show, angle
 from collections import deque
 
 class Optflow: 
@@ -33,7 +33,7 @@ class Optflow:
     # check whether in people boxes
     def is_in_ppbox(self, point, mask):
         point = point.astype(np.int32)
-        if np.array_equal(mask[point[1], point[0]], np.array([255, 255, 255])): 
+        if np.array_equal(mask[point[1], point[0]], np.array([255, 255, 255])): # 白色 -> ppbox 內
             return True
         return False
     # O({crowd數}* {crowd大小}* 100})。回傳每個人群的周圍feature
@@ -91,6 +91,7 @@ class Optflow:
         
         return res
 
+               
 
     # function of Using optical flow calculatoin and get usable features' movment.
     def get_opticalflow_point(self, prev_img, next_img, prev_features, masked_img):
@@ -111,12 +112,14 @@ class Optflow:
         
         # processing that if all the points are in usable position
         for point0, point1, s in zip(prev_features, result, status):
-            # 若光流法的結果跑到"圖片外"，則保留資料
-            if point1[1] >= masked_img.shape[0] or point1[0] >= masked_img.shape[1]:
-                print("out of mask's bound")
-            # 若光流法的結果在"圖片內"，則判斷是否不再ppbox內
-            elif s != 1:
+
+            # 若光流法的"結果"在"圖片內"，則判斷是否不再ppbox內
+            if s != 1:
                 continue
+            # 若光流法的"結果"跑到"圖片外"，則保留資料
+            elif point1[1] >= masked_img.shape[0] or point1[0] >= masked_img.shape[1]:
+                print("out of mask's bound")
+                
             all_usable_prev_feature.append(point0)
             all_usable_result.append(point1)
         return np.array(all_usable_prev_feature), np.array(all_usable_result)

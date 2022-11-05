@@ -225,7 +225,6 @@ def run(
     dt, seen = [0.0, 0.0, 0.0, 0.0], 0
     curr_frames, prev_frames = [None] * nr_sources, [None] * nr_sources
     
-    
     for frame_idx, (path, im, im0s, vid_cap, s) in enumerate(dataset):
         if globals.kill_t == True:
             print("STOP ANALYZING!!")
@@ -278,7 +277,6 @@ def run(
             tmp_img = copy.deepcopy(im0)
             if im0.shape[0] >1000 or im0.shape[1]>1000:
                 tmp_img = cv2.resize(im0,(920,540), interpolation=cv2.INTER_AREA)
-            # cv2.imwrite("result/output"+str(globals.frame_count_cc)+".jpg", tmp_img)
             cv2.imwrite("output.jpg", tmp_img)
             ##############################test stream#######################################
             #cv2.imshow(str(p),im0)
@@ -394,16 +392,16 @@ def run(
                         if prev_features is not None:
                             optflow_output_img = copy.deepcopy(im0)
                             for id in prev_features:
+                                # 一次處理一個id的
                                 features = prev_features[id]
                                 if len(features) !=0:
                                     result0, result1 = optflow.get_opticalflow_point(prev_img, im0, features, ppbox_mask)
                                     
                                     # 存下結果
                                     optflow_result[id] = {"start": result0, "end": result1}
-                                      
-
+                                    
                                     optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
-                            show('optfolw_result', optflow_output_img, showout = True)
+                            show('optfolw_result', optflow_output_img, showout = False)
                             
                             # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
                             # print("optflow_result: ", optflow_result)
@@ -414,11 +412,11 @@ def run(
                         result = optflow.get_people_outer_features_list(im0, ppbox_mask, pdata[0], box_list)
                         # 紀錄上一組features
                         prev_features = result
-                            
-                        optflow_now_time = time.time()   
-                        temp = optflow_now_time - optflow_prev_time 
-                        total_optflow_time += temp
-                        print("Optflow_SINGLE_TIME: ", temp)
+                        
+                    optflow_now_time = time.time()   
+                    temp = optflow_now_time - optflow_prev_time 
+                    total_optflow_time += temp
+                    print("Optflow_SINGLE_TIME: ", temp)
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
@@ -453,7 +451,6 @@ def run(
                         
                             first_img = transparent
                             cnt = 1
-                        # if globals.frame_count_cc%pptrack_handler.frame_max == 0:
                         if len(pptrack_handler.records) >= pptrack_handler.frame_max:
                             pdata = pptrack_handler.trans_data2ppdata()
                             trace_prev_time = time.time()

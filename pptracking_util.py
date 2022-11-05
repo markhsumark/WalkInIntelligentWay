@@ -155,6 +155,8 @@ class DrawerManager:
     def draw_arrow_worker(self, obj, color, thick_func):
         # 取得旗標
         out = obj.get_arrow_mask(self.img, color, thick_func)
+        if out is None:
+            return
         alpha, beta, gamma = 1, self.beta, 0
         self.lock.acquire()
         self.img = cv2.addWeighted(self.img, alpha, out, beta, gamma)
