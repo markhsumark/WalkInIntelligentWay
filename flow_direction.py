@@ -10,7 +10,7 @@ class FlowDirection:
     def __init__(self):
         None
     def exec_flow_direction(self, person_data, background, optflow_result ):
-        edge = int((background.shape[1] + background.shape[0]/2.0)/5.0)
+        edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
         if len(person_data) == 0:
             print('no flow')
             return background
@@ -19,7 +19,6 @@ class FlowDirection:
             person_data = affect_by_optflow(person_data, optflow_result)
         res_crowd_list= self.get_crowd_list(person_data)
         arrow_img = self.draw_crowd_arrow(background, res_crowd_list, color = COLOR_CLOSE)
-        show("Arrow", arrow_img, showout = True)
         return arrow_img
 
 
@@ -44,7 +43,7 @@ class FlowDirection:
         # start = time.time()
         for pp1 in pdatas:
             # 周圍超過1人 
-            if len(pp1.nearby) < 1 or int(abs(pp1.vector[0]) + abs(pp1.vector[1])) <= 1:
+            if len(pp1.nearby) < 3 or int(abs(pp1.vector[0]) + abs(pp1.vector[1])) <= 1:
                 pp1.nearby = []
                 continue
             new_nearby = [pp1]

@@ -119,7 +119,7 @@ class Arrow:
         vector = self.vector
         start = self.start
         thickness = self.thickness
-        
+        print(vector)
         points = self.get_arrow_points(vector, thickness)
         points.append(vector)
         for point in points:

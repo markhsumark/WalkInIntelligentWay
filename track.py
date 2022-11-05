@@ -401,7 +401,7 @@ def run(
                                     optflow_result[id] = {"start": result0, "end": result1}
                                     
                                     optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
-                            show('optfolw_result', optflow_output_img, showout = False)
+                            show('optfolw_result', optflow_output_img, showout = True)
                             
                             # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
                             # print("optflow_result: ", optflow_result)
@@ -437,8 +437,10 @@ def run(
                             arrow_prev_time = time.time()
                             # 利用optflow結果影響person_data的vector
                             pdata = pptrack_handler.trans_data2ppdata()
-                            Flow.exec_flow_direction(pdata[0],  background, optflow_result)
-
+                            arrow_img = Flow.exec_flow_direction(pdata[0],  background, [])
+                            show("Arrow_origin", arrow_img, showout = True)
+                            arrow_img = Flow.exec_flow_direction(pdata[0],  background, optflow_result)
+                            show("Arrow_optflow", arrow_img, showout = True)
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time
                             total_arrow_time += temp

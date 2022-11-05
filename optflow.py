@@ -26,7 +26,7 @@ class Optflow:
             box_img = np.zeros((end_y - start_y, end_x - start_x, 3), dtype=np.int32)
             box_img[0:end_y - start_y, 0:  end_x - start_x] = 255
             mask[start_y:end_y, start_x:end_x] = box_img
-        # cv2.imwrite('mask.jpg', mask)
+        cv2.imwrite('mask.jpg', mask)
         return mask
         
     
@@ -49,20 +49,20 @@ class Optflow:
             pid = pp.id
             ppl_box = np.array(box_list[pid]).astype(np.int32)
             # 外拓，以方便獲取周圍的feature
-            ppl_box += np.array([-10, -10, 10, 10])
+            ppl_box += np.array([-50, -50, 50, 50])
             # 避免<0的位置
             for i in range(4):
                 if ppl_box[i] < 0 :
                     ppl_box[i] = 0
             # 取box範圍內的img和masked_img
             person_box_masked_img = masked_img[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
+            person_box_origin_img = im0[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
             # 取box範圍內的特徵點(相對位置)
-            person_outer_features = self.get_features(person_box_masked_img)
+            person_outer_features = self.get_features(person_box_origin_img, person_box_masked_img)
             
             # 相對位置->絕對位置
             for feature in person_outer_features:
                 feature += [ppl_box[0], ppl_box[1]]
-                
                 img = cv2.circle(img, (feature[0], feature[1]), 10, [0,255,0], -1)
             
             people_outer_features_dict[pp.id] = person_outer_features
@@ -71,25 +71,53 @@ class Optflow:
 
         #key: crowd_id, value : features
         return people_outer_features_dict
-    # 取人群的輪廓（最多x個點作為特徵)
-    def get_features(self, masked_img):
+    # 取人群的輪廓
+    def get_features(self, im0, masked_img):
         # 參考來源：https://iter01.com/547012.html
         # ret, binary = cv2.threshold(masked_img, 127, 255, cv2.THRESH_BINARY)
-        masked_img = cv2.cvtColor(masked_img, cv2.COLOR_BGR2GRAY)
-        masked_img = np.array(masked_img,np.uint8)
-        contours, hierarchy = cv2.findContours(masked_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        # draw_img0 = cv2.drawContours(masked_img.copy(), contours, -1,(0,0,255),3)
         
-        contours = np.array(list(contours), dtype = object)
+        # detect : https://blog.csdn.net/amusi1994/article/details/79591205
         
-        #trans. data structure to [ [ point coordination ], [ ], ...]
-        res = np.empty(shape= (1,2), dtype=np.int64)
-        for c in contours:
-            c = c.reshape(c.shape[0]*c.shape[1], 2)
-            res = np.concatenate((res, c))
-        res = res[1:]
+        # akaze = cv2.AKAZE_create()
+        # keypoints = akaze.detect(im0, None)
         
-        return res
+        kaze = cv2.KAZE_create()
+        keypoints = kaze.detect(im0, None)
+        
+        # surf = cv2.xfeatures2d.SURF_create()
+        # keypoints = surf.detect(im0, None)
+        
+        # brisk = cv2.BRISK_create()
+        # keypoints = brisk.detect(im0, None)
+        
+        # --------
+        all_keypoints = []
+        for keypoint in keypoints:
+            keypoint = np.array(keypoint.pt, dtype= np.int32)
+            if not self.is_in_ppbox(keypoint, masked_img):
+                all_keypoints.append(keypoint)
+        all_keypoints = np.array(all_keypoints, dtype = np.int32)
+
+        # all_keypoints = np.astype(shape= (1,2), dtype=np.int64)
+        
+        # masked_img = cv2.cvtColor(masked_img, cv2.COLOR_BGR2GRAY)
+        # masked_img = np.array(masked_img,np.uint8)
+        
+        # contours, hierarchy = cv2.findContours(masked_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        # # draw_img0 = cv2.drawContours(masked_img.copy(), contours, -1,(0,0,255),3)
+        
+        # contours = np.array(list(contours), dtype = object)
+        
+        # #trans. data structure to [ [ point coordination ], [ ], ...]
+        # res = np.empty(shape= (1,2), dtype=np.int64)
+        # for c in contours:
+        #     c = c.reshape(c.shape[0]*c.shape[1], 2)
+        #     res = np.concatenate((res, c))
+        # res = res[1:]
+        
+        
+        
+        return all_keypoints
 
                
 

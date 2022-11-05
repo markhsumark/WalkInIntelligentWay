@@ -1,4 +1,5 @@
 from ast import Lambda
+from audioop import avg
 from faulthandler import disable
 
 from matplotlib.image import imsave
@@ -100,7 +101,7 @@ def affect_by_optflow(person_data, optflow_result):
     
     for pdata, opt_res_id in zip(person_data, optflow_result):
         optdata = optflow_result[opt_res_id]
-
+        
         #取opt res的平均位移量
         start_p_list = optdata['start']
         end_p_list = optdata['end']
@@ -119,12 +120,27 @@ def affect_by_optflow(person_data, optflow_result):
         #     scope = angle/45
         #     scope_count[scope]+= 1
         #...未完成
-        if len(vec_list)!= 0:
+        len_vec_list = len(vec_list)
+        if len_vec_list!= 0:
             for vec in vec_list:
                 total_vector += vec
-            avg_vector = total_vector/len(vec_list)
+            avg_vector = total_vector/len_vec_list
+            # print(pdata.vector, vec_list, avg_vector)
+            # for vec in vec_list:
+            #     if abs(dist(vec) - dist(avg_vector)) > 5:
+            #         total_vector -= vec
+            #         len_vec_list -= 1
+            # if len_vec_list == 0:
+            #     continue
+            avg_vector = total_vector/len_vec_list
+            # if dist(avg_vector) < 4:
+            #     continue
+            # print(pdata.vector, avg_vector)
+            print('before: ', pdata.vector)
+            print('avg_vector: ',avg_vector)
             pdata.vector -= avg_vector
-        
+            pdata.vector = [int(pdata.vector[0]), int(pdata.vector[1])]
+            print('after: ', pdata.vector)
         
             
     return person_data
