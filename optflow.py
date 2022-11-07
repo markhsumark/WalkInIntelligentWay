@@ -1,10 +1,13 @@
 from turtle import left
 import numpy as np
 import threading
+from flow_direction import FlowDirection
 from yolov5.utils.general import (cv2)
 import copy
-from pptracking_util import dist, show, angle
+from pptracking_util import COLOR_CLOSE, COLOR_MIDDLE, dist, show, angle
 from collections import deque
+from pptrack_handler import Data
+from crowd import Crowd
 
 class Optflow: 
     def __init__(self): 
@@ -161,19 +164,30 @@ class Optflow:
         w, h = frame.shape[0: 2]
         limit_vec_dist = dist([w, h]) // 3
         
-        for old, new in zip(pt0s, pt1s):
-            line_color = [0, 255, 255]
-            # remove the strange line
-            if dist(new, old) > limit_vec_dist:
-                line_color = [0, 0, 0]
-            a,b = new.ravel()
-            c,d = old.ravel()
-            # print("draw line from {} to {}".format(old, new))
-            temp_frame = cv2.arrowedLine(temp_frame, (a,b), (c,d), line_color, 7)
+        # 點線畫法
+        # for old, new in zip(pt0s, pt1s):
+        #     line_color = [0, 255, 255]
+        #     # remove the strange line
+        #     if dist(new, old) > limit_vec_dist:
+        #         line_color = [0, 0, 0]
+        #     a,b = new.ravel()
+        #     c,d = old.ravel()
+        #     # print("draw line from {} to {}".format(old, new))
+        #     temp_frame = cv2.arrowedLine(temp_frame, (a,b), (c,d), line_color, 7)
             
-            temp_frame = cv2.circle(temp_frame, (a,b), 8, [0,0,255], -1)
-            temp_frame = cv2.circle(temp_frame, (c,d), 8, [0,255,0], -1)
-            
+        #     temp_frame = cv2.circle(temp_frame, (a,b), 8, [0,0,255], -1)
+        #     temp_frame = cv2.circle(temp_frame, (c,d), 8, [0,255,0], -1)
+        
+        # 圖像畫法
+        people = []
+        fake_id_count = 0
+        for pt0, pt1 in zip(pt0s, pt1s):
+            data = Data(fake_id_count, pt0, pt1-pt0, [])
+            fake_id_count+= 1
+            people.append(data)
+        crowd = Crowd(people)
+        f = FlowDirection()
+        temp_frame = f.draw_crowd_arrow(temp_frame,[crowd], color = COLOR_MIDDLE)
             # cv2.imwrite('optical_flow.jpg', temp_frame)
         return temp_frame
         

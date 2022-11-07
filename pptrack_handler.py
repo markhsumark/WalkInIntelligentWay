@@ -4,7 +4,7 @@ from faulthandler import disable
 
 from matplotlib.image import imsave
 from crowd import Crowd
-from pptracking_util import dist, ThicknessSigmoid, color_palette, DrawerManager, angle, b_search_pp
+from pptracking_util import dist, ThicknessSigmoid, color_palette, DrawerManager, angle, b_search_pp, Arrow
 from scipy.spatial.distance import cdist
 from collections import deque
 from functools import cmp_to_key
@@ -97,53 +97,45 @@ class PPTrackHandler: #Data_position
         return pdata_per_frame 
             
         #cv2.circle(影像, 圓心座標, 半徑, 顏色, 線條寬度)
-def affect_by_optflow(person_data, optflow_result): 
+def affect_by_optflow(people_data, optflow_result): 
     
-    for pdata, opt_res_id in zip(person_data, optflow_result):
-        optdata = optflow_result[opt_res_id]
+    for pdata in people_data:
         
+        if pdata.id in optflow_result:
+            optdata = optflow_result[pdata.id]
         #取opt res的平均位移量
         start_p_list = optdata['start']
         end_p_list = optdata['end']
 
-        total_vector = 0
 
-        # vec_list = []
-
-        # test
         vec_list = end_p_list - start_p_list
 
-        # 移除不合理的向量
-        # scope_count = np.zeros(8) # 八個方向
-        # for vec in vec_list:
-        #     angle = angle(vec, [1, 0])
-        #     scope = angle/45
-        #     scope_count[scope]+= 1
-        #...未完成
         len_vec_list = len(vec_list)
-        if len_vec_list!= 0:
-            for vec in vec_list:
-                total_vector += vec
-            avg_vector = total_vector/len_vec_list
-            # print(pdata.vector, vec_list, avg_vector)
-            # for vec in vec_list:
-            #     if abs(dist(vec) - dist(avg_vector)) > 5:
-            #         total_vector -= vec
-            #         len_vec_list -= 1
-            # if len_vec_list == 0:
-            #     continue
-            avg_vector = total_vector/len_vec_list
-            # if dist(avg_vector) < 4:
-            #     continue
-            # print(pdata.vector, avg_vector)
-            print('before: ', pdata.vector)
-            print('avg_vector: ',avg_vector)
-            pdata.vector -= avg_vector
-            pdata.vector = [int(pdata.vector[0]), int(pdata.vector[1])]
-            print('after: ', pdata.vector)
+        if len_vec_list == 0:
+            continue
         
+
+        sum_of_vector = np.zeros(2)
+        for vec in vec_list:
+            sum_of_vector += vec
+        avg_of_vector = np.array(sum_of_vector / len(vec_list), dtype=np.int)
+        # print(pdata.vector, vec_list, avg_vector)
+        # for vec in vec_list:
+        #     if abs(dist(vec) - dist(avg_vector)) > 5:
+        #         total_vector -= vec
+        #         len_vec_list -= 1
+        # if len_vec_list == 0:
+        #     continue
+        # if dist(avg_vector) < 4:
+        #     continue
+        # print(pdata.vector, avg_vector)
+        # print('before: ', pdata.vector)
+        # print('avg_vector: ',avg_of_vector)
+        pdata.vector -= avg_of_vector
+        # print('after: ', pdata.vector)
+                
             
-    return person_data
+    return people_data
 
 
 

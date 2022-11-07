@@ -9,15 +9,15 @@ from functools import cmp_to_key
 class FlowDirection:
     def __init__(self):
         None
-    def exec_flow_direction(self, person_data, background, optflow_result ):
+    def exec_flow_direction(self, people_data, background, optflow_result ):
         edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
-        if len(person_data) == 0:
+        if len(people_data) == 0:
             print('no flow')
             return background
-        person_data = self.compute_nearby(person_data, edge)
+        people_data = self.compute_nearby(people_data, edge)
         if len(optflow_result) != 0:
-            person_data = affect_by_optflow(person_data, optflow_result)
-        res_crowd_list= self.get_crowd_list(person_data)
+            people_data = affect_by_optflow(people_data, optflow_result)
+        res_crowd_list= self.get_crowd_list(people_data)
         arrow_img = self.draw_crowd_arrow(background, res_crowd_list, color = COLOR_CLOSE)
         return arrow_img
 

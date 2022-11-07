@@ -211,7 +211,7 @@ def run(
     prev_img = None
     prev_features = None
     ppbox_mask = None
-    n_frame = 3 # 決定一次要分析幾個frame , n_frame must>= 2
+    n_frame = 6 # 決定一次要分析幾個frame , n_frame must>= 2
     optflow_result = dict()
     pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
@@ -438,7 +438,7 @@ def run(
                             # 利用optflow結果影響person_data的vector
                             pdata = pptrack_handler.trans_data2ppdata()
                             arrow_img = Flow.exec_flow_direction(pdata[0],  background, [])
-                            show("Arrow_origin", arrow_img, showout = True)
+                            show("Arrow", arrow_img, showout = True)
                             arrow_img = Flow.exec_flow_direction(pdata[0],  background, optflow_result)
                             show("Arrow_optflow", arrow_img, showout = True)
                             arrow_now_time = time.time()

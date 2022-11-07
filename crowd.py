@@ -1,4 +1,4 @@
-from pptracking_util import dist, Arrow
+from pptracking_util import dist, Arrow, ThicknessSigmoid
 import numpy as np
 class Crowd:
     def __init__(self, people,):
@@ -19,7 +19,7 @@ class Crowd:
             return True
         else:
             return False
-    def get_arrow_mask(self, img, color, thick_fun):
+    def get_arrow_mask(self, img, color, thick_fun= ThicknessSigmoid(5)):
         sum_of_xy = np.zeros(2)
         sum_of_vector = np.zeros(2)
         people = self.people
@@ -27,10 +27,10 @@ class Crowd:
             sum_of_xy = sum_of_xy + pp.xy
             sum_of_vector = sum_of_vector + pp.vector
         start_center_xy = np.array(sum_of_xy / len(people), dtype=np.int)
-        sum_of_vector = np.array(sum_of_vector / len(people), dtype=np.int)
-        if dist(sum_of_vector) <= 4:
+        res_vector = np.array(sum_of_vector / len(people), dtype=np.int)
+        if dist(res_vector) <= 4:
             return None
-        res_vector = np.array(sum_of_vector, dtype = np.int)
+        print('res vec', res_vector)
         # thickfun : 用人數去取得箭頭的粗細
         thickness = thick_fun(len(people))
         arrow = Arrow(start_center_xy, res_vector, color, thickness)
