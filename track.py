@@ -211,7 +211,7 @@ def run(
     prev_img = None
     prev_features = None
     ppbox_mask = None
-    n_frame = 6 # 決定一次要分析幾個frame , n_frame must>= 2
+    n_frame = 5 # 決定一次要分析幾個frame , n_frame must>= 2
     optflow_result = dict()
     pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
@@ -384,10 +384,10 @@ def run(
             pptrack_handler.add_record(ppl_res)
             if ppl_res:
                 if show_optflow:
-                    optflow_prev_time = time.time()
                     optflow = Optflow()     
                     if globals.frame_count_cc%pptrack_handler.frame_max == 0:
                     # if len(pptrack_handler.records) >= pptrack_handler.frame_max:
+                        optflow_prev_time = time.time()
                         ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
                         if prev_features is not None:
                             optflow_output_img = copy.deepcopy(im0)
@@ -413,10 +413,10 @@ def run(
                         # 紀錄上一組features
                         prev_features = result
                         
-                    optflow_now_time = time.time()   
-                    temp = optflow_now_time - optflow_prev_time 
-                    total_optflow_time += temp
-                    print("Optflow_SINGLE_TIME: ", temp)
+                        optflow_now_time = time.time()   
+                        temp = optflow_now_time - optflow_prev_time 
+                        total_optflow_time += temp
+                        print("Optflow_SINGLE_TIME: ", temp)
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
@@ -437,10 +437,8 @@ def run(
                             arrow_prev_time = time.time()
                             # 利用optflow結果影響person_data的vector
                             pdata = pptrack_handler.trans_data2ppdata()
-                            arrow_img = Flow.exec_flow_direction(pdata[0],  background, [])
-                            show("Arrow", arrow_img, showout = True)
                             arrow_img = Flow.exec_flow_direction(pdata[0],  background, optflow_result)
-                            show("Arrow_optflow", arrow_img, showout = True)
+                            show("Arrow", arrow_img, showout = True)
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time
                             total_arrow_time += temp

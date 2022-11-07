@@ -10,7 +10,7 @@ class FlowDirection:
     def __init__(self):
         None
     def exec_flow_direction(self, people_data, background, optflow_result ):
-        edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
+        edge = int((background.shape[1] + background.shape[0]/2.0)/5.0)
         if len(people_data) == 0:
             print('no flow')
             return background
@@ -58,7 +58,7 @@ class FlowDirection:
                         # if pp2 isn't move or move slow. (ignore unnessesary people data)
                         if abs(vector2[0]) + abs(vector2[1]) <= 10:
                             break
-                        elif angle(vector, vector2) <= theta:
+                        elif abs(angle(vector, vector2)) <= theta:
                             new_nearby.append(pp2)
                         break  
             pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id - b.id))

@@ -52,7 +52,7 @@ class Optflow:
             pid = pp.id
             ppl_box = np.array(box_list[pid]).astype(np.int32)
             # 外拓，以方便獲取周圍的feature
-            ppl_box += np.array([-50, -50, 50, 50])
+            ppl_box += np.array([-70, -70, 70, 70])
             # 避免<0的位置
             for i in range(4):
                 if ppl_box[i] < 0 :
@@ -165,18 +165,18 @@ class Optflow:
         limit_vec_dist = dist([w, h]) // 3
         
         # 點線畫法
-        # for old, new in zip(pt0s, pt1s):
-        #     line_color = [0, 255, 255]
-        #     # remove the strange line
-        #     if dist(new, old) > limit_vec_dist:
-        #         line_color = [0, 0, 0]
-        #     a,b = new.ravel()
-        #     c,d = old.ravel()
-        #     # print("draw line from {} to {}".format(old, new))
-        #     temp_frame = cv2.arrowedLine(temp_frame, (a,b), (c,d), line_color, 7)
+        for old, new in zip(pt0s, pt1s):
+            line_color = [0, 255, 255]
+            # remove the strange line
+            if dist(new, old) > limit_vec_dist:
+                line_color = [0, 0, 0]
+            a,b = new.ravel()
+            c,d = old.ravel()
+            # print("draw line from {} to {}".format(old, new))
+            temp_frame = cv2.arrowedLine(temp_frame, (a,b), (c,d), line_color, 7)
             
-        #     temp_frame = cv2.circle(temp_frame, (a,b), 8, [0,0,255], -1)
-        #     temp_frame = cv2.circle(temp_frame, (c,d), 8, [0,255,0], -1)
+            temp_frame = cv2.circle(temp_frame, (a,b), 8, [0,0,255], -1)
+            temp_frame = cv2.circle(temp_frame, (c,d), 8, [0,255,0], -1)
         
         # 圖像畫法
         people = []

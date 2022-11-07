@@ -28,9 +28,9 @@ class Crowd:
             sum_of_vector = sum_of_vector + pp.vector
         start_center_xy = np.array(sum_of_xy / len(people), dtype=np.int)
         res_vector = np.array(sum_of_vector / len(people), dtype=np.int)
-        if dist(res_vector) <= 4:
-            return None
-        print('res vec', res_vector)
+        print('res vec: ', res_vector)
+        # if dist(res_vector) <= 4:
+        #     return None
         # thickfun : 用人數去取得箭頭的粗細
         thickness = thick_fun(len(people))
         arrow = Arrow(start_center_xy, res_vector, color, thickness)

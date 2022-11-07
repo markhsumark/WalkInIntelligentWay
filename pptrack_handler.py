@@ -13,6 +13,7 @@ import copy
 import cv2
 import numpy as np
 import time
+import math
 
 class Data:
     def __init__(self, id, xy, vector, nearby):
@@ -97,6 +98,49 @@ class PPTrackHandler: #Data_position
         return pdata_per_frame 
             
         #cv2.circle(影像, 圓心座標, 半徑, 顏色, 線條寬度)
+        
+domain_range = {0:(0, 45), 1:(45, 90), 2:(90, 135), 3:(135, 180), 4:(180, 225), 5:(225, 270), 6:(270, 315), 7:(315, 360)}
+def get_target_domain(angle_list):  
+    
+    domain_count = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0} #分成８象限
+    max_domain =0
+    max2_domain =0
+    for a in angle_list:
+        if a >0 and a<= 45:
+            domain_count[0]+= 1
+            if domain_count[max_domain] < domain_count[0]:
+                max_domain = 0
+        elif a> 45 and a <= 90:
+            domain_count[1]+= 1
+            if domain_count[max_domain] < domain_count[1]:
+                max_domain = 1
+        elif a> 90 and a <= 135:
+            domain_count[2]+= 1
+            if domain_count[max_domain] < domain_count[2]:
+                max_domain = 2
+        elif a> 135 and a <= 180:
+            domain_count[3]+= 1
+            if domain_count[max_domain] < domain_count[3]:
+                max_domain = 3
+        elif a> 180 and a <= 225:
+            domain_count[4]+= 1
+            if domain_count[max_domain] < domain_count[4]:
+                max_domain = 4
+        elif a> 225 and a <= 270:
+            domain_count[5]+= 1
+            if domain_count[max_domain] < domain_count[5]:
+                max_domain = 5
+        elif a> 270 and a <= 315:
+            domain_count[6]+= 1
+            if domain_count[max_domain] < domain_count[6]:
+                max_domain = 6
+        elif a> 315 and a <= 360:
+            domain_count[7]+= 1
+            if domain_count[max_domain] < domain_count[7]:
+                max_domain = 7
+        
+    print('max: ', max_domain)
+    return max_domain
 def affect_by_optflow(people_data, optflow_result): 
     
     for pdata in people_data:
@@ -114,25 +158,49 @@ def affect_by_optflow(people_data, optflow_result):
         if len_vec_list == 0:
             continue
         
+        ## 利用角度remove extreme vector
+        angle_list = [angle(v1 = vec, tag = False) for vec in vec_list]
+        print('angle: ', angle_list)
+        
+        tgt_d = get_target_domain(angle_list)
+        list_in_domain = [[a, v] for a, v in zip(angle_list, vec_list) if a > domain_range[tgt_d][0] and a <= domain_range[tgt_d][1]]
+                    
+        # math functions
+        def average(l):
+            l = np.array(l)
+            return np.mean(l)
+        def variable(l): #變異數
+            avg = average(l)
+            temp = 0.0
+            for i in l:
+                temp += math.pow(i - avg, 2)
+            return temp/len(l) 
+        def sigma(l): #標準差
+            var = variable(l)
+            return math.pow(var, 0.5) 
+        
+        # # use average and sigma(標準差)define available range
+        temp_list = [a for [a, v] in list_in_domain]
+        s = sigma(temp_list)
+        avg = average(temp_list)
+        available_range = (int(avg-s), int(avg+s))
+        print('range: ', available_range)
+
+        available_vec_list = [v for a, v in list_in_domain if a >= available_range[0] and a <= available_range[1]]
+            
+        print('available_vec_list: ', available_vec_list)
+            
+            
 
         sum_of_vector = np.zeros(2)
-        for vec in vec_list:
+        for vec in available_vec_list:
             sum_of_vector += vec
-        avg_of_vector = np.array(sum_of_vector / len(vec_list), dtype=np.int)
-        # print(pdata.vector, vec_list, avg_vector)
-        # for vec in vec_list:
-        #     if abs(dist(vec) - dist(avg_vector)) > 5:
-        #         total_vector -= vec
-        #         len_vec_list -= 1
-        # if len_vec_list == 0:
-        #     continue
-        # if dist(avg_vector) < 4:
-        #     continue
-        # print(pdata.vector, avg_vector)
-        # print('before: ', pdata.vector)
-        # print('avg_vector: ',avg_of_vector)
+            # print(vec)
+        avg_of_vector = np.array(sum_of_vector / len(available_vec_list), dtype=np.int)   
+        print('avg: ', avg_of_vector)     
+        print('before: ', pdata.vector)
         pdata.vector -= avg_of_vector
-        # print('after: ', pdata.vector)
+        print('after: ',  pdata.vector)
                 
             
     return people_data
