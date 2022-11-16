@@ -13,6 +13,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 import csv
 import time
 import threading
+from multiprocessing import Process
 import sys
 import numpy as np
 from pathlib import Path
@@ -20,6 +21,7 @@ import torch
 import torch.backends.cudnn as cudnn
 import pptracking_util as p_util
 from flow_direction import FlowDirection
+
 
 
 FILE = Path(__file__).resolve()
@@ -219,6 +221,7 @@ def run(
     cnt = 0
     min_size = []
     ff=0
+    Flow_thread = None
     # ---------------------------------------------------------------------------------
     # Run tracking
     model.warmup(imgsz=(1 if pt else nr_sources, 3, *imgsz))  # warmup
@@ -426,7 +429,6 @@ def run(
                     total_heatmap_time += temp
                     heatmap_array.append(temp)
                     print("Heatmap_SINGLE_TIME:", temp)
-
                 # show arrow diagram(opencv)
                 if show_arrow or show_trace:   
                     
@@ -437,7 +439,12 @@ def run(
                             arrow_prev_time = time.time()
                             # 利用optflow結果影響person_data的vector
                             pdata = pptrack_handler.trans_data2ppdata()
-                            Flow.exec_flow_direction(pdata[0],  background, optflow_result)
+                            Flow_thread = Process(
+                                target= Flow.exec_flow_direction, 
+                                args = (pdata[0],  background, optflow_result)
+                            )
+                            Flow_thread.start()
+                            # Flow.exec_flow_direction(pdata[0],  background, optflow_result)
 
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time
@@ -465,11 +472,12 @@ def run(
                             print("Trace_SINGLE_TIME:", temp)
                             show("Trace", curve_img)
                     
+                Flow_thread.join()  
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)
                 print("TOTAL TRACE TIME", total_trace_time)
                 print("TOTAL OPTFLOW TIME", total_optflow_time)
-                    
+                  
                     
                 
             # Stream results
