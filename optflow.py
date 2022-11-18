@@ -18,8 +18,7 @@ class Optflow:
         self.prev_img = None
         self.optflow_result = {}
         self.prev_features = []
-    def exec_optical_flow(self, im0, ppbox_list, pptrack_handler:PPTrackHandler):
-        optflow_result = self.optflow_result
+    def exec_optical_flow(self, im0, ppbox_list, pdata):
         prev_features = self.prev_features
          
         ppbox_mask= self.get_ppbox_mask(im0, ppbox_list)  
@@ -29,22 +28,21 @@ class Optflow:
                 # 一次處理一個id的
                 features = prev_features[id]
                 if len(features) !=0:
-                    result0, result1 = self.get_opticalflow_point(prev_img, im0, features, ppbox_mask)
+                    result0, result1 = self.get_opticalflow_point(self.prev_img, im0, features, ppbox_mask)
                     
                     # 存下結果
-                    optflow_result[id] = {"start": result0, "end": result1}
+                    self.optflow_result[id] = {"start": result0, "end": result1}
                     
                     optflow_output_img = self.draw_optflow(optflow_output_img, result0, result1)
             show('optfolw_result', optflow_output_img, showout = False)
             
             # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
-            # print("optflow_result: ", optflow_result)
-        prev_img = im0 # 紀錄上一張圖
+            # print("optflow_result: ", self.optflow_result)
+        self.prev_img = im0 # 紀錄上一張圖
 
         # 求出上一張圖的features並記錄
-        pdata = pptrack_handler.trans_data2ppdata() 
         # 紀錄上一組features
-        prev_features = self.get_people_outer_features_list(im0, ppbox_mask, pdata[0], ppbox_list)
+        self.prev_features = self.get_people_outer_features_list(im0, ppbox_mask, pdata[0], ppbox_list)
         
     # 先把人遮住，之後只需判斷是否為mask就能判斷是否在ppbox內, O({人數})
     def get_ppbox_mask(self, img, box_list):  
@@ -60,7 +58,7 @@ class Optflow:
             box_img = np.zeros((end_y - start_y, end_x - start_x, 3), dtype=np.int32)
             box_img[0:end_y - start_y, 0:  end_x - start_x] = 255
             mask[start_y:end_y, start_x:end_x] = box_img
-        cv2.imwrite('mask.jpg', mask)
+        # cv2.imwrite('mask.jpg', mask)
         return mask
         
     
@@ -82,17 +80,22 @@ class Optflow:
             # 找出人的box 外框
             pid = pp.id
             ppl_box = np.array(box_list[pid]).astype(np.int32)
-            # 外拓，以方便獲取周圍的feature
-            ppl_box += np.array([-70, -70, 70, 70])
+            
             # 避免<0的位置
             for i in range(4):
                 if ppl_box[i] < 0 :
                     ppl_box[i] = 0
-            # 取box範圍內的img和masked_img
-            person_box_masked_img = masked_img[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
-            person_box_origin_img = im0[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
+            
             # 取box範圍內的特徵點(相對位置)
-            person_outer_features = self.get_features(person_box_origin_img, person_box_masked_img)
+            person_outer_features = []
+            while len(person_outer_features) <30: #若<30個點 擴大搜尋範圍
+                # 外拓，以方便獲取周圍的feature
+                ppl_box += np.array([-20, -20, 20, 20])
+                # 取box範圍內的img和masked_img
+                person_box_masked_img = masked_img[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
+                person_box_origin_img = im0[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
+                
+                person_outer_features = self.get_features(person_box_origin_img, person_box_masked_img)
             
             # 相對位置->絕對位置
             for feature in person_outer_features:
@@ -100,8 +103,6 @@ class Optflow:
                 img = cv2.circle(img, (feature[0], feature[1]), 10, [0,255,0], -1)
             
             people_outer_features_dict[pp.id] = person_outer_features
-
-        cv2.imwrite('person"s_all_features.jpg', img)
 
         #key: crowd_id, value : features
         return people_outer_features_dict

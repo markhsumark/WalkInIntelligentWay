@@ -391,10 +391,11 @@ def run(
                     optflow_prev_time = time.time()
                     if globals.frame_count_cc%pptrack_handler.frame_max == 0:
                     # if len(pptrack_handler.records) >= pptrack_handler.frame_max:
+                        pdata = pptrack_handler.trans_data2ppdata()
                         optflow.exec_optical_flow(
                             im0 = im0,
                             ppbox_list = box_list,
-                            pptrack_handler= pptrack_handler
+                            pdata = pdata
                         )
                     optflow_now_time = time.time()   
                     temp = optflow_now_time - optflow_prev_time 
@@ -451,8 +452,8 @@ def run(
                             trace_array.append(temp)
                             print("Trace_SINGLE_TIME:", temp)
                             show("Trace", curve_img)
-                    
-                Flow_thread.join()  
+                if Flow_thread is not None:
+                    Flow_thread.join()  
                 print("TOTAL HEATMAP TIME:", total_heatmap_time)
                 print("TOTAL ARROW TIME:", total_arrow_time)
                 print("TOTAL TRACE TIME", total_trace_time)

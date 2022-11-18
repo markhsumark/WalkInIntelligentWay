@@ -59,7 +59,7 @@ COLOR_CLOSE = (0, 0, 255)
 COLOR_MIDDLE = (0, 255, 0)
 COLOR_LONG = (255, 0, 0)
 #count = 0
-def show(title, im, wait = 0, showout = False):
+def show(title, im, showout = False):
     #global count
     if im.shape[0] >1000 or im.shape[1]>1000:
         w, h = im.shape[0:2]
@@ -67,7 +67,7 @@ def show(title, im, wait = 0, showout = False):
     try: 
         #print(im.shape)
         # cv2.imwrite("result/output_"+title+str(globals.frame_count_cc)+".jpg", im)
-        cv2.imwrite("output_"+title+".jpg", im)     
+        cv2.imwrite("results/output_"+title+".jpg", im)     
         #count += 1
     except:
         print('---save image of'+ " output_"+title+".jpg" + 'has an error')
