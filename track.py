@@ -90,7 +90,7 @@ def video_command():
     parser.add_argument('--show-arrow', action='store_true', default=True,help='show arrow')
     parser.add_argument('--show-trace', action='store_true', default=True ,help='show trace')
     parser.add_argument('--show-original', action='store_true',help='show original')
-    parser.add_argument('--show-optflow', action='store_true',help='show optflow')
+    parser.add_argument('--show-optflow', action='store_true', default = True, help='show optflow')
     parser.add_argument('--wait', action='store_true', help='when showing img, waiting for user command to continue')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
@@ -217,6 +217,7 @@ def run(
     optflow_result = dict()
     pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
+    optflow = Optflow() 
     first_img = []
     cnt = 0
     min_size = []
@@ -388,34 +389,13 @@ def run(
             if ppl_res:
                 if show_optflow:
                     optflow_prev_time = time.time()
-                    optflow = Optflow()     
                     if globals.frame_count_cc%pptrack_handler.frame_max == 0:
                     # if len(pptrack_handler.records) >= pptrack_handler.frame_max:
-                        ppbox_mask= optflow.get_ppbox_mask(im0, box_list)  
-                        if prev_features is not None:
-                            optflow_output_img = copy.deepcopy(im0)
-                            for id in prev_features:
-                                # 一次處理一個id的
-                                features = prev_features[id]
-                                if len(features) !=0:
-                                    result0, result1 = optflow.get_opticalflow_point(prev_img, im0, features, ppbox_mask)
-                                    
-                                    # 存下結果
-                                    optflow_result[id] = {"start": result0, "end": result1}
-                                    
-                                    optflow_output_img = optflow.draw_optflow(optflow_output_img, result0, result1)
-                            show('optfolw_result', optflow_output_img, showout = False)
-                            
-                            # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
-                            # print("optflow_result: ", optflow_result)
-                        prev_img = im0 # 紀錄上一張圖
-
-                        # 求出上一張圖的features並記錄
-                        pdata = pptrack_handler.trans_data2ppdata() 
-                        result = optflow.get_people_outer_features_list(im0, ppbox_mask, pdata[0], box_list)
-                        # 紀錄上一組features
-                        prev_features = result
-                        
+                        optflow.exec_optical_flow(
+                            im0 = im0,
+                            ppbox_list = box_list,
+                            pptrack_handler= pptrack_handler
+                        )
                     optflow_now_time = time.time()   
                     temp = optflow_now_time - optflow_prev_time 
                     total_optflow_time += temp
@@ -441,7 +421,7 @@ def run(
                             pdata = pptrack_handler.trans_data2ppdata()
                             Flow_thread = Process(
                                 target= Flow.exec_flow_direction, 
-                                args = (pdata[0],  background, optflow_result)
+                                args = (pdata[0],  background, optflow.optflow_result)
                             )
                             Flow_thread.start()
                             # Flow.exec_flow_direction(pdata[0],  background, optflow_result)

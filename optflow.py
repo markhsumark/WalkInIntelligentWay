@@ -1,6 +1,7 @@
 from turtle import left
 import numpy as np
 import threading
+from pptrack_handler import PPTrackHandler
 from yolov5.utils.general import (cv2)
 import copy
 from pptracking_util import dist, show, angle
@@ -11,7 +12,37 @@ class Optflow:
         self.lk_params = dict(  winSize = (15, 15), 
                                 maxLevel = 2,
                                 criteria = (cv2.TERM_CRITERIA_EPS| cv2.TERM_CRITERIA_COUNT, 10, 0.03))
-    
+        self.prev_img = None
+        self.optflow_result = {}
+        self.prev_features = []
+    def exec_optical_flow(self, im0, ppbox_list, pptrack_handler:PPTrackHandler):
+        optflow_result = self.optflow_result
+        prev_features = self.prev_features
+         
+        ppbox_mask= self.get_ppbox_mask(im0, ppbox_list)  
+        if prev_features is not None:
+            optflow_output_img = copy.deepcopy(im0)
+            for id in prev_features:
+                # 一次處理一個id的
+                features = prev_features[id]
+                if len(features) !=0:
+                    result0, result1 = self.get_opticalflow_point(prev_img, im0, features, ppbox_mask)
+                    
+                    # 存下結果
+                    optflow_result[id] = {"start": result0, "end": result1}
+                    
+                    optflow_output_img = self.draw_optflow(optflow_output_img, result0, result1)
+            show('optfolw_result', optflow_output_img, showout = False)
+            
+            # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
+            # print("optflow_result: ", optflow_result)
+        prev_img = im0 # 紀錄上一張圖
+
+        # 求出上一張圖的features並記錄
+        pdata = pptrack_handler.trans_data2ppdata() 
+        # 紀錄上一組features
+        prev_features = self.get_people_outer_features_list(im0, ppbox_mask, pdata[0], ppbox_list)
+        
     # 先把人遮住，之後只需判斷是否為mask就能判斷是否在ppbox內, O({人數})
     def get_ppbox_mask(self, img, box_list):  
         img_shape = img.shape
