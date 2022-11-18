@@ -29,7 +29,7 @@ class ThicknessSigmoid:
             sig = z / (1 + z)
             return sig * 10
 
-def angle(v1, v2):
+def angle(v1, v2 = [1, 0], tag = True):
     dx1 = v1[0]
     dy1 = v1[1]
     dx2 = v2[0] 
@@ -47,7 +47,7 @@ def angle(v1, v2):
     #if they have different slope
     else:
         included_angle = abs(angle1) + abs(angle2)
-        if included_angle > 180:
+        if included_angle > 180 and tag:
             included_angle = 360 - included_angle
     return included_angle
 def dist(end, start = np.array([0, 0])):
@@ -119,7 +119,6 @@ class Arrow:
         vector = self.vector
         start = self.start
         thickness = self.thickness
-        
         points = self.get_arrow_points(vector, thickness)
         points.append(vector)
         for point in points:

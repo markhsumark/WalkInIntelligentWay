@@ -9,17 +9,16 @@ from functools import cmp_to_key
 class FlowDirection:
     def __init__(self):
         None
-    def exec_flow_direction(self, person_data, background, optflow_result ):
+    def exec_flow_direction(self, people_data, background, optflow_result ):
         edge = int((background.shape[1] + background.shape[0]/2.0)/5.0)
-        if len(person_data) == 0:
+        if len(people_data) == 0:
             print('no flow')
             return background
-        person_data = self.compute_nearby(person_data, edge)
+        people_data = self.compute_nearby(people_data, edge)
         if len(optflow_result) != 0:
-            person_data = affect_by_optflow(person_data, optflow_result)
-        res_crowd_list= self.get_crowd_list(person_data)
+            people_data = affect_by_optflow(people_data, optflow_result)
+        res_crowd_list= self.get_crowd_list(people_data)
         arrow_img = self.draw_crowd_arrow(background, res_crowd_list, color = COLOR_CLOSE)
-        show("Arrow", arrow_img, showout = True)
         return arrow_img
 
 
@@ -44,7 +43,7 @@ class FlowDirection:
         # start = time.time()
         for pp1 in pdatas:
             # 周圍超過1人 
-            if len(pp1.nearby) < 1 or int(abs(pp1.vector[0]) + abs(pp1.vector[1])) <= 1:
+            if len(pp1.nearby) < 3 or int(abs(pp1.vector[0]) + abs(pp1.vector[1])) <= 1:
                 pp1.nearby = []
                 continue
             new_nearby = [pp1]
@@ -59,7 +58,7 @@ class FlowDirection:
                         # if pp2 isn't move or move slow. (ignore unnessesary people data)
                         if abs(vector2[0]) + abs(vector2[1]) <= 10:
                             break
-                        elif angle(vector, vector2) <= theta:
+                        elif abs(angle(vector, vector2)) <= theta:
                             new_nearby.append(pp2)
                         break  
             pp1.nearby = sorted(new_nearby, key = cmp_to_key(lambda a, b: a.id - b.id))

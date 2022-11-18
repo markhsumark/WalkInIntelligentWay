@@ -1,9 +1,10 @@
 from ast import Lambda
+from audioop import avg
 from faulthandler import disable
 
 from matplotlib.image import imsave
 from crowd import Crowd
-from pptracking_util import dist, ThicknessSigmoid, color_palette, DrawerManager, angle, b_search_pp
+from pptracking_util import dist, ThicknessSigmoid, color_palette, DrawerManager, angle, b_search_pp, Arrow
 from scipy.spatial.distance import cdist
 from collections import deque
 from functools import cmp_to_key
@@ -12,6 +13,7 @@ import copy
 import cv2
 import numpy as np
 import time
+import math
 
 class Data:
     def __init__(self, id, xy, vector, nearby):
@@ -96,38 +98,112 @@ class PPTrackHandler: #Data_position
         return pdata_per_frame 
             
         #cv2.circle(影像, 圓心座標, 半徑, 顏色, 線條寬度)
-def affect_by_optflow(person_data, optflow_result): 
+        
+domain_range = {0:(0, 45), 1:(45, 90), 2:(90, 135), 3:(135, 180), 4:(180, 225), 5:(225, 270), 6:(270, 315), 7:(315, 360)}
+def get_target_domain(angle_list):  
     
-    for pdata, opt_res_id in zip(person_data, optflow_result):
-        optdata = optflow_result[opt_res_id]
-
+    domain_count = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0} #分成８象限
+    max_domain =0
+    max2_domain =0
+    for a in angle_list:
+        if a >0 and a<= 45:
+            domain_count[0]+= 1
+            if domain_count[max_domain] < domain_count[0]:
+                max_domain = 0
+        elif a> 45 and a <= 90:
+            domain_count[1]+= 1
+            if domain_count[max_domain] < domain_count[1]:
+                max_domain = 1
+        elif a> 90 and a <= 135:
+            domain_count[2]+= 1
+            if domain_count[max_domain] < domain_count[2]:
+                max_domain = 2
+        elif a> 135 and a <= 180:
+            domain_count[3]+= 1
+            if domain_count[max_domain] < domain_count[3]:
+                max_domain = 3
+        elif a> 180 and a <= 225:
+            domain_count[4]+= 1
+            if domain_count[max_domain] < domain_count[4]:
+                max_domain = 4
+        elif a> 225 and a <= 270:
+            domain_count[5]+= 1
+            if domain_count[max_domain] < domain_count[5]:
+                max_domain = 5
+        elif a> 270 and a <= 315:
+            domain_count[6]+= 1
+            if domain_count[max_domain] < domain_count[6]:
+                max_domain = 6
+        elif a> 315 and a <= 360:
+            domain_count[7]+= 1
+            if domain_count[max_domain] < domain_count[7]:
+                max_domain = 7
+        
+    print('max: ', max_domain)
+    return max_domain
+def affect_by_optflow(people_data, optflow_result): 
+    
+    for pdata in people_data:
+        
+        if pdata.id in optflow_result:
+            optdata = optflow_result[pdata.id]
         #取opt res的平均位移量
         start_p_list = optdata['start']
         end_p_list = optdata['end']
 
-        total_vector = 0
 
-        # vec_list = []
-
-        # test
         vec_list = end_p_list - start_p_list
 
-        # 移除不合理的向量
-        # scope_count = np.zeros(8) # 八個方向
-        # for vec in vec_list:
-        #     angle = angle(vec, [1, 0])
-        #     scope = angle/45
-        #     scope_count[scope]+= 1
-        #...未完成
-        if len(vec_list)!= 0:
-            for vec in vec_list:
-                total_vector += vec
-            avg_vector = total_vector/len(vec_list)
-            pdata.vector -= avg_vector
+        len_vec_list = len(vec_list)
+        if len_vec_list == 0:
+            continue
         
+        ## 利用角度remove extreme vector
+        angle_list = [angle(v1 = vec, tag = False) for vec in vec_list]
+        print('angle: ', angle_list)
         
+        tgt_d = get_target_domain(angle_list)
+        list_in_domain = [[a, v] for a, v in zip(angle_list, vec_list) if a > domain_range[tgt_d][0] and a <= domain_range[tgt_d][1]]
+                    
+        # math functions
+        def average(l):
+            l = np.array(l)
+            return np.mean(l)
+        def variable(l): #變異數
+            avg = average(l)
+            temp = 0.0
+            for i in l:
+                temp += math.pow(i - avg, 2)
+            return temp/len(l) 
+        def sigma(l): #標準差
+            var = variable(l)
+            return math.pow(var, 0.5) 
+        
+        # # use average and sigma(標準差)define available range
+        temp_list = [a for [a, v] in list_in_domain]
+        s = sigma(temp_list)
+        avg = average(temp_list)
+        available_range = (int(avg-s), int(avg+s))
+        print('range: ', available_range)
+
+        available_vec_list = [v for a, v in list_in_domain if a >= available_range[0] and a <= available_range[1]]
             
-    return person_data
+        print('available_vec_list: ', available_vec_list)
+            
+            
+
+        sum_of_vector = np.zeros(2)
+        for vec in available_vec_list:
+            sum_of_vector += vec
+            # print(vec)
+        avg_of_vector = np.array(sum_of_vector / len(available_vec_list), dtype=np.int)   
+        print('avg: ', avg_of_vector)     
+        print('before: ', pdata.vector)
+        pdata.vector -= avg_of_vector
+        print('after: ',  pdata.vector)
+                
+            
+    return people_data
 
 
 
