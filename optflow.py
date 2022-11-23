@@ -9,6 +9,7 @@ from pptracking_util import COLOR_CLOSE, COLOR_MIDDLE, dist, show, angle
 from collections import deque
 from pptrack_handler import Data
 from crowd import Crowd
+import time
 
 class Optflow: 
     def __init__(self): 
@@ -18,7 +19,7 @@ class Optflow:
         self.prev_img = None
         self.optflow_result = {}
         self.prev_features = []
-    def exec_optical_flow(self, im0, ppbox_list, pdata):
+    def exec_optical_flow(self, im0, ppbox_list, pdata, draw = False):
         prev_features = self.prev_features
          
         ppbox_mask= self.get_ppbox_mask(im0, ppbox_list)  
@@ -32,9 +33,10 @@ class Optflow:
                     
                     # 存下結果
                     self.optflow_result[id] = {"start": result0, "end": result1}
-                    
-                    optflow_output_img = self.draw_optflow(optflow_output_img, result0, result1)
-            show('optfolw_result', optflow_output_img, showout = False)
+                    if draw:
+                        optflow_output_img = self.draw_optflow(optflow_output_img, result0, result1)
+            if draw:
+                show('optfolw_result', optflow_output_img, showout = False)
             
             # !!!!!!!!!!!!!!!!optflow result (USE THIS!!!!!!!)
             # print("optflow_result: ", self.optflow_result)
@@ -42,7 +44,10 @@ class Optflow:
 
         # 求出上一張圖的features並記錄
         # 紀錄上一組features
+        prev_feature_time = time.time()
         self.prev_features = self.get_people_outer_features_list(im0, ppbox_mask, pdata[0], ppbox_list)
+        now_feature_time = time.time()
+        print('- Cost {:.3f} second in get_people_outer_features_list'.format(now_feature_time- prev_feature_time))
         
     # 先把人遮住，之後只需判斷是否為mask就能判斷是否在ppbox內, O({人數})
     def get_ppbox_mask(self, img, box_list):  
@@ -73,7 +78,7 @@ class Optflow:
         img = copy.deepcopy(im0)
         h, w = img.shape[:2]
         people_outer_features_dict = {}
-        # 處理每個人群
+        # 處理每個人
         for pp in ppdata_list:
             
             ppl_box = [int(h), int(w), 0, 0]
@@ -87,8 +92,9 @@ class Optflow:
                     ppl_box[i] = 0
             
             # 取box範圍內的特徵點(相對位置)
+            
             person_outer_features = []
-            while len(person_outer_features) <30: #若<30個點 擴大搜尋範圍
+            while len(person_outer_features) <50: #若<30個點 擴大搜尋範圍
                 # 外拓，以方便獲取周圍的feature
                 ppl_box += np.array([-20, -20, 20, 20])
                 # 取box範圍內的img和masked_img
@@ -96,6 +102,7 @@ class Optflow:
                 person_box_origin_img = im0[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
                 
                 person_outer_features = self.get_features(person_box_origin_img, person_box_masked_img)
+            
             
             # 相對位置->絕對位置
             for feature in person_outer_features:

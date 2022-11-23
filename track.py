@@ -90,7 +90,7 @@ def video_command():
     parser.add_argument('--show-arrow', action='store_true', default=True,help='show arrow')
     parser.add_argument('--show-trace', action='store_true', default=True ,help='show trace')
     parser.add_argument('--show-original', action='store_true',help='show original')
-    parser.add_argument('--show-optflow', action='store_true', default = True, help='show optflow')
+    parser.add_argument('--show-optflow', action='store_false', default = True, help='show optflow')
     parser.add_argument('--wait', action='store_true', help='when showing img, waiting for user command to continue')
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
@@ -388,19 +388,21 @@ def run(
             pptrack_handler.add_record(ppl_res)
             if ppl_res:
                 if show_optflow:
-                    optflow_prev_time = time.time()
+                    
                     if globals.frame_count_cc%pptrack_handler.frame_max == 0:
                     # if len(pptrack_handler.records) >= pptrack_handler.frame_max:
+                        optflow_prev_time = time.time()
                         pdata = pptrack_handler.trans_data2ppdata()
                         optflow.exec_optical_flow(
                             im0 = im0,
                             ppbox_list = box_list,
-                            pdata = pdata
+                            pdata = pdata,
+                            draw = False
                         )
-                    optflow_now_time = time.time()   
-                    temp = optflow_now_time - optflow_prev_time 
-                    total_optflow_time += temp
-                    print("Optflow_SINGLE_TIME: ", temp)
+                        optflow_now_time = time.time()   
+                        temp = optflow_now_time - optflow_prev_time 
+                        total_optflow_time += temp
+                        print("Optflow_SINGLE_TIME: ", temp)
                 if show_heatmap: 
                     h, w = im0.shape[0:2]
                     heatmap_prev_time = time.time()
@@ -418,14 +420,14 @@ def run(
                         if  globals.frame_count_cc% pptrack_handler.frame_max == 0:
                             
                             arrow_prev_time = time.time()
-                            # 利用optflow結果影響person_data的vector
+                            # # 利用optflow結果影響person_data的vector
                             pdata = pptrack_handler.trans_data2ppdata()
-                            Flow_thread = Process(
-                                target= Flow.exec_flow_direction, 
-                                args = (pdata[0],  background, optflow.optflow_result)
-                            )
-                            Flow_thread.start()
-                            # Flow.exec_flow_direction(pdata[0],  background, optflow_result)
+                            # Flow_thread = Process(
+                            #     target= Flow.exec_flow_direction, 
+                            #     args = (pdata[0],  background, optflow.optflow_result)
+                            # )
+                            # Flow_thread.start()
+                            Flow.exec_flow_direction(pdata[0],  background, optflow.optflow_result)
 
                             arrow_now_time = time.time()
                             temp = arrow_now_time-arrow_prev_time

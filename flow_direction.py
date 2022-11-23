@@ -16,6 +16,7 @@ class FlowDirection:
             return background
         people_data = self.compute_nearby(people_data, edge)
         if len(optflow_result) != 0:
+            print('(affected by optflow)')
             people_data = affect_by_optflow(people_data, optflow_result)
         res_crowd_list= self.get_crowd_list(people_data)
         flow_img = self.draw_crowd_arrow(background, res_crowd_list, color = COLOR_CLOSE)
