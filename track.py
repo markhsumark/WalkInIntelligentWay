@@ -49,7 +49,7 @@ from strong_sort.utils.parser import get_config
 from strong_sort.strong_sort import StrongSORT
 from heatmap import heatmap
 from pptrack_handler import PPTrackHandler
-from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show, BackgroundManager, FlowWorker
+from pptracking_util import COLOR_CLOSE, COLOR_LONG, COLOR_MIDDLE, show, BackgroundManager
 from optflow import Optflow
 #from curve import draw_trace
 import copy
@@ -107,7 +107,10 @@ heatmap_array = []
 trace_array = []
 arrow_array = []
 yolo_array = []
+optflow_array = []
+optflow_ppcount = []
 strongsort_array = []
+
 
 
 # remove duplicated stream handler to avoid duplicated logging
@@ -213,7 +216,7 @@ def run(
     prev_img = None
     prev_features = None
     ppbox_mask = None
-    n_frame = 5 # 決定一次要分析幾個frame , n_frame must>= 2
+    n_frame = 3 # 決定一次要分析幾個frame , n_frame must>= 2
     optflow_result = dict()
     pptrack_handler = PPTrackHandler(n_frame)
     b_manager = BackgroundManager()
@@ -234,8 +237,8 @@ def run(
             print("STOP ANALYZING!!")
             break
         globals.frame_count_cc += 1
-        # if frame_count_cc >= 300:
-        #     break
+        if globals.frame_count_cc >= 100:
+            break
         t1 = time_sync()
         im = torch.from_numpy(im).to(device)
         im = im.half() if half else im.float()  # uint8 to fp16/32
@@ -401,6 +404,8 @@ def run(
                         )
                         optflow_now_time = time.time()   
                         temp = optflow_now_time - optflow_prev_time 
+                        optflow_array.append(temp)
+                        optflow_ppcount.append(len(ppl_res))
                         total_optflow_time += temp
                         print("Optflow_SINGLE_TIME: ", temp)
                 if show_heatmap: 
@@ -515,7 +520,13 @@ def main(opt):
     print("TOTAL TRACE TIME", total_trace_time)
     print("TOTAL TIME:" + format(time_end-time_start))
     
-    p_util.write_all_results(yolo_array, strongsort_array, heatmap_array, arrow_array, trace_array, people_nums_array)
+    p_util.write_result(
+            path = 'optflow_result.csv',
+            data_header = 'optflow_result',
+            data = optflow_array, 
+            people_nums_array = optflow_ppcount,
+            write_header=True
+        )
 
 
 def start_stream(source):

@@ -139,7 +139,7 @@ def get_target_domain(angle_list):
             if domain_count[max_domain] < domain_count[7]:
                 max_domain = 7
         
-    print('max: ', max_domain)
+    # print('max: ', max_domain)
     return max_domain
 def affect_by_optflow(people_data, optflow_result): 
     

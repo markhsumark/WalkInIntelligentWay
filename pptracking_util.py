@@ -116,9 +116,9 @@ class Arrow:
     
     def get_mask(self, shape):
         # print(self)
-        vector = self.vector
+        vector = self.vector*2
         start = self.start
-        thickness = self.thickness
+        thickness = self.thickness*2
         points = self.get_arrow_points(vector, thickness)
         points.append(vector)
         for point in points:
@@ -190,32 +190,6 @@ class BackgroundManager:
         self.lock.release()
         return temp
 
-class FlowWorker(threading.Thread):
-    def __init__(self, data_site, b_manager):
-        threading.Thread.__init__(self)
-        self.data_site = data_site
-        self.b_manager = b_manager
-        # self.state = False
-    # def start(self, a): 
-    #     self.state = a
-    def run(self):
-        data_site = self.data_site
-        b_manager = self.b_manager
-        while True:
-            if data_site.count_frame >= data_site.frame_max:
-                background = b_manager.get_image()
-                edge = int((background.shape[1] + background.shape[0]/2.0)/8.0)
-                
-                arrow_prev_time = time.time()
-                arrow_img = data_site.draw_crowd_arrow(background, color = COLOR_CLOSE, distance_edge = edge)
-                arrow_now_time = time.time()
-                temp = arrow_now_time-arrow_prev_time
-                # total_arrow_time += temp
-                # arrow_array.append(temp)
-                print("Arrow_SINGLE_TIME:",temp)
-                show("Arrow", arrow_img)
-                print('flow sleep ......')
-                time.sleep(1)
 
 
         
@@ -227,7 +201,14 @@ def write_result(path, data_header, data, people_nums_array, write_header = True
         for i in range(len(data)):
             writer.writerow([data[i], people_nums_array[i]])
 
-def write_all_results(yolo_array, strongsort_array, heatmap_array, arrow_array, trace_array, people_nums_array): 
+def write_all_results(yolo_array = None,
+                      strongsort_array= None,
+                      heatmap_array= None,
+                      arrow_array= None, 
+                      trace_array= None,
+                      optflow_array = None, 
+                      people_nums_array= None
+                      ): 
     yolo_path = 'yolo_result.csv'
     yolo_headers = ['yolo_time', 'people']
     strongsort_path = 'strongsort_result.csv'
@@ -238,33 +219,47 @@ def write_all_results(yolo_array, strongsort_array, heatmap_array, arrow_array, 
     arrow_headers = ['arrow_time', 'people']
     trace_path = 'flow_result.csv'
     trace_headers = ['flow_time', 'people']
-    write_result(
-        path = yolo_path,
-        data_header = yolo_headers,
-        data = yolo_array, 
-        people_nums_array = people_nums_array
-    )
-    write_result(
-        path = strongsort_path,
-        data_header = strongsort_headers,
-        data = strongsort_array, 
-        people_nums_array = people_nums_array
-    )
-    write_result(
-        path = heatmap_path,
-        data_header = heatmap_headers,
-        data = heatmap_array, 
-        people_nums_array = people_nums_array
-    )
-    write_result(
-        path = arrow_path,
-        data_header = arrow_headers,
-        data = arrow_array, 
-        people_nums_array = people_nums_array
-    )
-    write_result(
-        path = trace_path,
-        data_header = trace_headers,
-        data = trace_array, 
-        people_nums_array = people_nums_array
-    )
+    optflow_path = 'optflow_result.csv'
+    optflow_headers = ['optflow_time', 'people']
+    if yolo_array:
+        write_result(
+            path = yolo_path,
+            data_header = yolo_headers,
+            data = yolo_array, 
+            people_nums_array = people_nums_array
+        )
+    if strongsort_array:
+        write_result(
+            path = strongsort_path,
+            data_header = strongsort_headers,
+            data = strongsort_array, 
+            people_nums_array = people_nums_array
+        )
+    if heatmap_array:
+        write_result(
+            path = heatmap_path,
+            data_header = heatmap_headers,
+            data = heatmap_array, 
+            people_nums_array = people_nums_array
+        )
+    if arrow_array:
+        write_result(
+            path = arrow_path,
+            data_header = arrow_headers,
+            data = arrow_array, 
+            people_nums_array = people_nums_array
+        )
+    if trace_array:
+        write_result(
+            path = trace_path,
+            data_header = trace_headers,
+            data = trace_array, 
+            people_nums_array = people_nums_array
+        )
+    if optflow_array:
+        write_result(
+            path = optflow_path,
+            data_header = optflow_headers,
+            data = optflow_array, 
+            people_nums_array = people_nums_array
+        )

@@ -1,6 +1,10 @@
+# from msilib.schema import Feature
+from multiprocessing.dummy import Process
 from turtle import left
+from matplotlib.pyplot import box
 import numpy as np
 import threading
+import multiprocessing
 from pptrack_handler import PPTrackHandler
 from flow_direction import FlowDirection
 from yolov5.utils.general import (cv2)
@@ -45,7 +49,7 @@ class Optflow:
         # 求出上一張圖的features並記錄
         # 紀錄上一組features
         prev_feature_time = time.time()
-        self.prev_features = self.get_people_outer_features_list(im0, ppbox_mask, pdata[0], ppbox_list)
+        self.prev_features = self.get_people_outer_features_list(im0, ppbox_mask, pdata[0], ppbox_list) # this part hold most of time of exec_optical_flow
         now_feature_time = time.time()
         print('- Cost {:.3f} second in get_people_outer_features_list'.format(now_feature_time- prev_feature_time))
         
@@ -76,41 +80,55 @@ class Optflow:
     # O({crowd數}* {crowd大小}* 100})。回傳每個人群的周圍feature
     def get_people_outer_features_list(self, im0, masked_img, ppdata_list, box_list:dict): 
         img = copy.deepcopy(im0)
-        h, w = img.shape[:2]
         people_outer_features_dict = {}
+        
+        FDR = Feature_Dict_Runner(
+            feature_func = self.get_features,
+            result_dict = people_outer_features_dict
+            )
         # 處理每個人
         for pp in ppdata_list:
+            FDR.add_worker(
+                pp = pp,
+                box_list= box_list,
+                masked_img= masked_img,
+                img = img
+            )
+            # h, w = img.shape[:2]
+            # ppl_box = [int(h), int(w), 0, 0]
+            # # 找出人的box 外框
+            # pid = pp.id
+            # ppl_box = np.array(box_list[pid]).astype(np.int32)
             
-            ppl_box = [int(h), int(w), 0, 0]
-            # 找出人的box 外框
-            pid = pp.id
-            ppl_box = np.array(box_list[pid]).astype(np.int32)
+            # # 避免<0的位置
+            # for i in range(4):
+            #     if ppl_box[i] < 0 :
+            #         ppl_box[i] = 0
             
-            # 避免<0的位置
-            for i in range(4):
-                if ppl_box[i] < 0 :
-                    ppl_box[i] = 0
+            # # 取box範圍內的特徵點(相對位置)
             
-            # 取box範圍內的特徵點(相對位置)
-            
-            person_outer_features = []
-            while len(person_outer_features) <50: #若<30個點 擴大搜尋範圍
-                # 外拓，以方便獲取周圍的feature
-                ppl_box += np.array([-20, -20, 20, 20])
-                # 取box範圍內的img和masked_img
-                person_box_masked_img = masked_img[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
-                person_box_origin_img = im0[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
-                
-                person_outer_features = self.get_features(person_box_origin_img, person_box_masked_img)
+            # person_outer_features = []
+            # while len(person_outer_features) <50: #若<30個點 擴大搜尋範圍
+            #     # 外拓，以方便獲取周圍的feature
+            #     ppl_box += np.array([-20, -20, 20, 20])
+            #     # 取box範圍內的img和masked_img
+            #     person_box_masked_img = masked_img[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
+            #     person_box_origin_img = img[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
+            #     # prev = time.time()
+            #     person_outer_features = self.get_features(person_box_origin_img, person_box_masked_img)# this part Cost a lot of time (~= 0.007 s)
+            #     # now = time.time()
+            #     # print('get feature Cost :', now - prev)
             
             
-            # 相對位置->絕對位置
-            for feature in person_outer_features:
-                feature += [ppl_box[0], ppl_box[1]]
-                img = cv2.circle(img, (feature[0], feature[1]), 10, [0,255,0], -1)
+            # # 相對位置->絕對位置
+            # for feature in person_outer_features:
+            #     feature += [ppl_box[0], ppl_box[1]]
             
-            people_outer_features_dict[pp.id] = person_outer_features
+            # people_outer_features_dict[pp.id] = person_outer_features
 
+        FDR.run()
+        people_outer_features_dict = FDR.result_dict
+        
         #key: crowd_id, value : features
         return people_outer_features_dict
     # 取人群的輪廓
@@ -124,7 +142,7 @@ class Optflow:
         # keypoints = akaze.detect(im0, None)
         
         kaze = cv2.KAZE_create()
-        keypoints = kaze.detect(im0, None)
+        keypoints = kaze.detect(im0, None) # this part cost large time ~= get_features function
         
         # surf = cv2.xfeatures2d.SURF_create()
         # keypoints = surf.detect(im0, None)
@@ -233,3 +251,50 @@ class Optflow:
             
             
         
+class Feature_Dict_Runner():
+    def __init__(self, feature_func, result_dict):
+        self.result_dict = result_dict
+        self.lock = threading.Lock()
+        self.feature_func = feature_func
+        self.worker_list = []
+    def add_worker(self, pp, box_list, masked_img, img):
+        worker = threading.Thread(
+            target = self.get_pp_feature,
+            args = (pp, box_list, masked_img, img)
+        )
+        self.worker_list.append(worker)
+    def run(self):
+        for worker in self.worker_list:
+            worker.start()
+        for worker in self.worker_list:
+            worker.join()
+        print('FDRunner workers done!!')
+    def get_pp_feature(self, pp, box_list, masked_img, img):
+        h, w = img.shape[:2]
+        ppl_box = [int(h), int(w), 0, 0]
+        # 找出人的box 外框
+        pid = pp.id
+        ppl_box = np.array(box_list[pid]).astype(np.int32)
+        
+        # 避免<0的位置
+        for i in range(4):
+            if ppl_box[i] < 0 :
+                ppl_box[i] = 0
+        
+        # 取box範圍內的特徵點(相對位置)
+        
+        person_outer_features = []
+        while len(person_outer_features) <50: #若<30個點 擴大搜尋範圍
+            # 外拓，以方便獲取周圍的feature
+            ppl_box += np.array([-20, -20, 20, 20])
+            # 取box範圍內的img和masked_img
+            person_box_masked_img = masked_img[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
+            person_box_origin_img = img[ppl_box[1]:ppl_box[3], ppl_box[0]:ppl_box[2], :]
+            person_outer_features = self.feature_func(person_box_origin_img, person_box_masked_img)
+        
+        
+        # 相對位置->絕對位置
+        for feature in person_outer_features:
+            feature += [ppl_box[0], ppl_box[1]]
+        with self.lock:
+            self.result_dict[pid] = person_outer_features
