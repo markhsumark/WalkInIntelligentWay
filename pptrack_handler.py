@@ -160,7 +160,7 @@ def affect_by_optflow(people_data, optflow_result):
         
         ## 利用角度remove extreme vector
         angle_list = [angle(v1 = vec, tag = False) for vec in vec_list]
-        print('angle: ', angle_list)
+        # print('angle: ', angle_list)
         
         tgt_d = get_target_domain(angle_list)
         list_in_domain = [[a, v] for a, v in zip(angle_list, vec_list) if a > domain_range[tgt_d][0] and a <= domain_range[tgt_d][1]]
@@ -184,11 +184,11 @@ def affect_by_optflow(people_data, optflow_result):
         s = sigma(temp_list)
         avg = average(temp_list)
         available_range = (int(avg-s), int(avg+s))
-        print('range: ', available_range)
+        # print('range: ', available_range)
 
         available_vec_list = [v for a, v in list_in_domain if a >= available_range[0] and a <= available_range[1]]
             
-        print('available_vec_list: ', available_vec_list)
+        # print('available_vec_list: ', available_vec_list)
             
             
 
@@ -197,10 +197,10 @@ def affect_by_optflow(people_data, optflow_result):
             sum_of_vector += vec
             # print(vec)
         avg_of_vector = np.array(sum_of_vector / len(available_vec_list), dtype=np.int)   
-        print('avg: ', avg_of_vector)     
-        print('before: ', pdata.vector)
+        # print('avg: ', avg_of_vector)     
+        # print('before: ', pdata.vector)
         pdata.vector -= avg_of_vector
-        print('after: ',  pdata.vector)
+        # print('after: ',  pdata.vector)
                 
             
     return people_data
