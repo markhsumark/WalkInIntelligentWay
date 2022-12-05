@@ -412,7 +412,7 @@ def run(
                                     im0 = im0,
                                     ppbox_list = box_list,
                                     pdata = pdata,
-                                    draw = True
+                                    draw = False
                                 )
                                 optflow_now_time = time.time()   
                                 temp = optflow_now_time - optflow_prev_time 
