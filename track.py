@@ -520,13 +520,13 @@ def main(opt):
     print("TOTAL TRACE TIME", total_trace_time)
     print("TOTAL TIME:" + format(time_end-time_start))
     
-    p_util.write_result(
-            path = 'optflow_result.csv',
-            data_header = 'optflow_result',
-            data = optflow_array, 
-            people_nums_array = optflow_ppcount,
-            write_header=True
-        )
+    # p_util.write_result(
+    #         path = 'optflow_result.csv',
+    #         data_header = 'optflow_result',
+    #         data = optflow_array, 
+    #         people_nums_array = optflow_ppcount,
+    #         write_header=True
+    #     )
 
 
 def start_stream(source):

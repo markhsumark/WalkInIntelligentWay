@@ -37,14 +37,14 @@ def gen_frames_origin():
 def gen_frames_trace():
     while True:
         time.sleep(0.05)
-        frame_origin = open("output_Trace.jpg",'rb').read()
+        frame_origin = open("./results/output_Trace.jpg",'rb').read()
         #frame_heatmap = open("output.jpg",'rb').read()
         yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + frame_origin + b'\r\n')
 def gen_frames_flow():
     while True:
         time.sleep(0.05)
-        frame_origin = open("output_Arrow.jpg",'rb').read()
+        frame_origin = open("./results/output_flow_direction.jpg",'rb').read()
         #frame_heatmap = open("output.jpg",'rb').read()
         yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + frame_origin + b'\r\n')
@@ -58,7 +58,7 @@ def gen_frames_heatmap():
 def gen_frames_box():
     while True:
         time.sleep(0.01)
-        frame_origin = open("output_Box.jpg",'rb').read()
+        frame_origin = open("./results/output_Box.jpg",'rb').read()
         #frame_heatmap = open("output.jpg",'rb').read()
         yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + frame_origin + b'\r\n')
