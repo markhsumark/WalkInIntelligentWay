@@ -119,7 +119,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY
 ## 作者
 
 徐易中 tulsa0415@gmail.com
+
 葉冠昊 yeskey525@gmail.com
+
 陳冠宇 a0973471825@gmail.com
+
 周雅蓁 jcohaonuna@gmail.com
  
